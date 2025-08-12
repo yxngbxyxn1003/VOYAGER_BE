@@ -4,3 +4,11 @@
 /build/
 out/
 
+# macOS
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+
