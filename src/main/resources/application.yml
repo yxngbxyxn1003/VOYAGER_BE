@@ -17,6 +17,10 @@ spring:
       ddl-auto: none
     database-platform: org.hibernate.dialect.MySQL8Dialect
     generate-ddl: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
 
 logging:
   level:
@@ -31,3 +35,5 @@ jwt:
   secret: "change-this-to-a-very-long-random-secret-at-least-256-bits"
   access-exp-millis: 86400000     # 1시간
 
+app:
+  upload-dir: uploads

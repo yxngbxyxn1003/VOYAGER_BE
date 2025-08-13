@@ -1,6 +1,7 @@
 package com.planty.config;
 
 import com.planty.common.ApiError;
+import org.apache.commons.fileupload.FileUploadBase;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.server.ResponseStatusException;
 
 
@@ -86,6 +90,33 @@ public class GlobalExceptionHandler {
         return ApiError.of(409, "CONSTRAINT_VIOLATION", "데이터 무결성 위반");
     }
 
+    // 멀티파트: form 파트 누락 (ex. form 또는 images 파트가 아예 없을 때)
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<?> handleMissingPart(MissingServletRequestPartException ex) {
+        String part = ex.getRequestPartName();
+        return ApiError.of(400, "MISSING_PART", part + " 파트가 필요합니다.");
+    }
+
+    // 파일 용량 초과 (Spring 표준)
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<?> handleMaxUpload(MaxUploadSizeExceededException ex) {
+        return ApiError.of(413, "FILE_TOO_LARGE", "파일 용량을 확인해주세요.");
+    }
+
+    // 그 외 멀티파트 처리 중 예외(랩핑된 경우 포함)
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<?> handleMultipart(MultipartException ex) {
+        Throwable root = ex.getCause();
+        if (root instanceof MaxUploadSizeExceededException) {
+            return ApiError.of(413, "FILE_TOO_LARGE", "파일 용량을 확인해주세요.");
+        }
+        // Apache Commons FileUpload를 쓸 때의 예외
+        if (root instanceof FileUploadBase.FileSizeLimitExceededException ||
+                root instanceof FileUploadBase.SizeLimitExceededException) {
+            return ApiError.of(413, "FILE_TOO_LARGE", "파일 용량을 확인해주세요.");
+        }
+        return ApiError.of(400, "MULTIPART_ERROR", "파일 업로드 형식이 올바르지 않습니다.");
+    }
 
     // 그 외 예기치 못한 에러
     @ExceptionHandler(Exception.class)
