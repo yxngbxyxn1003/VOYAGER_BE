@@ -1,5 +1,6 @@
 package com.planty.service.user;
 
+import com.planty.config.CustomUserDetails;
 import com.planty.entity.user.User;
 import com.planty.repository.user.UserRepository;
 import jakarta.transaction.Transactional;
@@ -11,6 +12,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.springframework.http.HttpStatus.CONFLICT;
@@ -47,16 +49,24 @@ public class UserService implements UserDetailsService {
 
     // 로그인 시 호출되는 메서드
     @Override
-    @Transactional(Transactional.TxType.SUPPORTS)
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
-        User u = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        // 권한 없이 기본 USER 권한만 부여
-        return new org.springframework.security.core.userdetails.User(
-                u.getUserId(),
-                u.getPassword(),
-                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        return new CustomUserDetails(
+                user.getId(),                  // PK
+                user.getUserId(),               // 로그인 ID
+                user.getPassword(),              // 비밀번호 해시
+                Collections.emptyList()          // 권한 (필요하면 채움)
         );
     }
+
+    // 문자 ID를 pk로 변환
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public Integer getPkByUserId(String userId) {
+        return userRepository.findByUserId(userId)
+                .map(User::getId)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+    }
+
 }

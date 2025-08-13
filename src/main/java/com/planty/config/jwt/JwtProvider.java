@@ -68,15 +68,16 @@ public class JwtProvider {
     }
 
     // JWT 액세스 토큰 발급
-    public String createAccessToken(String userId) {
+    public String createAccessToken(String userId) {  // Long → String
         Date now = new Date();
         return Jwts.builder()
-                .setSubject(userId) // 토큰 주인
-                .setIssuedAt(now)   // 발급 시간
-                .setExpiration(new Date(now.getTime() + accessExpMillis))   // 만료 시간
-                .signWith(key, SignatureAlgorithm.HS256)    // 키와 알고리즘으로 서명
-                .compact(); // 최종 문자열 토큰 생성
+                .setSubject(userId) // 문자열 user_id
+                .setIssuedAt(now)
+                .setExpiration(new Date(now.getTime() + accessExpMillis))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
     }
+
 
     // 토큰 검증 및 userId 반환
     public String getSubject(String token) {

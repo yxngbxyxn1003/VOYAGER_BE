@@ -1,6 +1,8 @@
 package com.planty.entity.user;
 
 import com.planty.dto.user.SignupFormDto;
+import com.planty.entity.board.Board;
+import com.planty.entity.crop.Crop;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -36,8 +38,14 @@ public class User {
     private Integer point = 0;
     private String profileImg;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user")
     private List<BlockUser> blocks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Crop> crops = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Board> boards = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;
