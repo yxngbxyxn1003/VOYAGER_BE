@@ -26,3 +26,8 @@ logging:
         type:
           descriptor:
             sql: trace
+
+jwt:
+  secret: "change-this-to-a-very-long-random-secret-at-least-256-bits"
+  access-exp-millis: 86400000     # 1시간
+

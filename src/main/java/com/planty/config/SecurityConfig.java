@@ -1,5 +1,7 @@
 package com.planty.config;
 
+import com.planty.config.jwt.JwtAuthenticationFilter;
+import com.planty.config.jwt.JwtProvider;
 import com.planty.service.user.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +19,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
-// import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 
 // 보안
@@ -28,20 +30,16 @@ public class SecurityConfig {
     private final UserService userService;
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
+    private final JwtProvider jwtProvider;
 
-    // (선택) JWT 쓰면 주입해서 아래 addFilterBefore에 등록
-    // private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
-    public SecurityConfig(
-            UserService userService,
-            CustomAccessDeniedHandler accessDeniedHandler,
-            CustomAuthenticationEntryPoint authenticationEntryPoint
-            // , JwtAuthenticationFilter jwtAuthenticationFilter
-    ) {
+    public SecurityConfig(UserService userService,
+                          CustomAccessDeniedHandler accessDeniedHandler,
+                          CustomAuthenticationEntryPoint authenticationEntryPoint,
+                          JwtProvider jwtProvider) {
         this.userService = userService;
         this.accessDeniedHandler = accessDeniedHandler;
         this.authenticationEntryPoint = authenticationEntryPoint;
-        // this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.jwtProvider = jwtProvider;
     }
 
     // 비밀번호 해시 저장
@@ -95,11 +93,8 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler)
                 );
 
-        // JWT 사용 시: 사용자 정의 필터 추가
-        // http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
-        // JWT 준비 전, 임시로 Basic 인증으로 개발 테스트 가능 (원하면 주석 해제)
-        // http.httpBasic(Customizer.withDefaults());
+        // 로그인 전 토큰 검증
+        http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -129,5 +124,11 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
 
         return source;
+    }
+
+    // 필터 빈 등록
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtProvider, userService);
     }
 }
