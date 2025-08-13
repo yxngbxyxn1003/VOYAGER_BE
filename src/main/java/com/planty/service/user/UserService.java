@@ -59,4 +59,13 @@ public class UserService implements UserDetailsService {
                 List.of(new SimpleGrantedAuthority("ROLE_USER"))
         );
     }
+
+    // 문자 ID를 pk로 변환
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public Integer getPkByUserId(String userId) {
+        return userRepository.findByUserId(userId)
+                .map(User::getId)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+    }
+
 }
