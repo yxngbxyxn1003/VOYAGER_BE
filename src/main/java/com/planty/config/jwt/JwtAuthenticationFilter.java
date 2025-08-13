@@ -1,5 +1,6 @@
 package com.planty.config.jwt;
 
+import com.planty.config.CustomUserDetails;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
@@ -29,6 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/users/login",
             "/api/users/signup"
     );
+
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     public JwtAuthenticationFilter(JwtProvider jwtProvider, UserDetailsService userDetailsService) {
@@ -74,26 +76,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 // 1) 토큰 파싱
                 String userId = jwtProvider.getSubject(token);
-                log.debug("[JWT] parsed ok. subject={}", userId);
 
                 // 2) 유저 로드
-                UserDetails user = userDetailsService.loadUserByUsername(userId);
-                log.debug("[JWT] user loaded: {}", user.getUsername());
+                CustomUserDetails user = (CustomUserDetails) userDetailsService.loadUserByUsername(userId);
 
                 // 3) 컨텍스트 설정
                 var auth = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
-            } catch (ExpiredJwtException e) {
-                log.warn("[JWT] expired: {}", e.getMessage());
-                SecurityContextHolder.clearContext();
-
-            } catch (MalformedJwtException | UnsupportedJwtException | IllegalArgumentException e) {
-                log.warn("[JWT] invalid token: {}", e.getMessage());
-                SecurityContextHolder.clearContext();
-
             } catch (Exception e) {
-                log.warn("[JWT] auth failure: {} - {}", e.getClass().getSimpleName(), e.getMessage(), e);
                 SecurityContextHolder.clearContext();
             }
         } else {
