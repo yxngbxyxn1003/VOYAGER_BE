@@ -1,7 +1,7 @@
 package com.planty.service.board;
 
-import com.planty.dto.board.BoardSaveFormDto;
-import com.planty.dto.board.BoardSellCropsDto;
+import com.planty.config.CustomUserDetails;
+import com.planty.dto.board.*;
 import com.planty.entity.board.Board;
 import com.planty.entity.board.BoardImage;
 import com.planty.entity.crop.Crop;
@@ -11,10 +11,14 @@ import com.planty.repository.crop.CropRepository;
 import com.planty.repository.user.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 
 // 판매 게시판
@@ -68,4 +72,44 @@ public class BoardService {
         return boardRepository.save(board).getId();
     }
 
+    // 판매 게시글 상세 페이지 정보
+    public BoardDetailResDto getBoardDetail(Integer id, CustomUserDetails me) {
+        Board board = boardRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NOT_FOUND"));
+
+        // 판매자 정보
+        SellerDto sellerDto = SellerDto.builder()
+                .sellerId(board.getUser().getId())
+                .sellerName(board.getUser().getNickname())
+                .profileImg(board.getUser().getProfileImg())
+                .build();
+
+        // 판매 게시글 이미지 처리
+        List<String> images = Optional.ofNullable(board.getImages())
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(BoardImage::getBoardImg)
+                .toList();
+
+        // 판매 게시글 정보
+        BoardDetailDto boardDetailDto = BoardDetailDto.builder()
+                .boardId(board.getId())
+                .cropId(board.getCrop().getId())
+                .title(board.getTitle())
+                .content(board.getContent())
+                .price(board.getPrice())
+                .sell(board.getSell())
+                .images(images)
+                .build();
+
+        // 소유자 여부
+        boolean isOwner = me != null && board.getUser().getId().equals(me.getId());
+
+        // 프론트에 보내주는 Dto 반환
+        return BoardDetailResDto.builder()
+                .seller(sellerDto)
+                .board(boardDetailDto)
+                .isOwner(isOwner)
+                .build();
+    }
 }

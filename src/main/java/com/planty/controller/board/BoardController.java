@@ -2,6 +2,7 @@ package com.planty.controller.board;
 
 import com.planty.common.ApiSuccess;
 import com.planty.config.CustomUserDetails;
+import com.planty.dto.board.BoardDetailResDto;
 import com.planty.dto.board.BoardFormDto;
 import com.planty.dto.board.BoardSaveFormDto;
 import com.planty.dto.board.BoardSellCropsDto;
@@ -35,8 +36,6 @@ import java.util.Map;
 public class BoardController {
 
     private final BoardService boardService;
-    private final CropRepository cropRepository;
-    private final UserRepository userRepository;
     private final StorageService storageService;
 
     // 판매 가능한 작물 가져오기
@@ -84,6 +83,24 @@ public class BoardController {
 
         // 컨벤션: 데이터 없을 때 status + message
         return ResponseEntity.status(201).body(new ApiSuccess(201, "성공적으로 처리되었습니다."));
+    }
+
+    // 판매 게시글 상세 조회
+    @GetMapping("/details/{id}")
+    public ResponseEntity<BoardDetailResDto> getBoardDetail(
+            @AuthenticationPrincipal CustomUserDetails me,
+
+            // 게시글 id
+            @PathVariable Integer id
+    ) {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 판매 게시글 데이터 가져오기
+        BoardDetailResDto dto = boardService.getBoardDetail(id, me);
+
+        // 판매 게시글 데이터 반환
+        return ResponseEntity.ok(dto);
     }
 }
 
