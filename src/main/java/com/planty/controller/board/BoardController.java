@@ -173,5 +173,17 @@ public class BoardController {
         // 성공 json 반환
         return ResponseEntity.ok(new ApiSuccess(200, "성공적으로 처리되었습니다."));
     }
+
+    // 판매 게시글 등록 전 포인트 차감
+    @GetMapping(value="/point")
+    public ResponseEntity<?> getPoint(
+            @AuthenticationPrincipal CustomUserDetails me
+    ) throws IOException {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 보유 포인트 반환
+        return ResponseEntity.ok(boardService.getPoint(me.getId()));
+    }
 }
 

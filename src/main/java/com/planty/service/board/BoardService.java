@@ -251,4 +251,19 @@ public class BoardService {
 
         return board;
     }
+
+    // 판매자 포인트 열람
+    public PointResDto getPoint(Integer meId){
+
+        // 판매자 조회
+        User user = userRepository.findById(meId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NOT_FOUND"));
+
+        PointResDto pointResDto = PointResDto.builder()
+                .id(meId)
+                .point(user.getPoint())
+                .build();
+
+        // 판매자 정보 및 보유 포인트 반환
+        return pointResDto;
+    }
 }
