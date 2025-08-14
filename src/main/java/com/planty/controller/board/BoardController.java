@@ -95,7 +95,7 @@ public class BoardController {
     }
 
     // 판매 게시글 수정 (JSON + 파일)
-    @PutMapping(value="/{id:\\d+}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value="/details/{id:\\d+}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateBoard(
             @AuthenticationPrincipal CustomUserDetails me,
             @PathVariable Integer id,
@@ -142,7 +142,7 @@ public class BoardController {
     }
 
     // 판매 게시글 판매 상태 수정
-    @PatchMapping(value="/{id:\\d+}")
+    @PatchMapping(value="/details/{id:\\d+}")
     public ResponseEntity<?> updateSellStatus(
             @AuthenticationPrincipal CustomUserDetails me,
             @PathVariable Integer id,
@@ -153,6 +153,22 @@ public class BoardController {
 
         // 판매 상태 업데이트
         boardService.updateSellStatus(id, me.getId(), sellStatusFormDto.getSellStatus());
+
+        // 성공 json 반환
+        return ResponseEntity.ok(new ApiSuccess(200, "성공적으로 처리되었습니다."));
+    }
+
+    // 판매 게시글 삭제
+    @DeleteMapping(value="/details/{id:\\d+}")
+    public ResponseEntity<?> deleteBoard(
+            @AuthenticationPrincipal CustomUserDetails me,
+            @PathVariable Integer id
+    ) throws IOException {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 삭제
+        boardService.deleteBoard(id, me.getId());
 
         // 성공 json 반환
         return ResponseEntity.ok(new ApiSuccess(200, "성공적으로 처리되었습니다."));
