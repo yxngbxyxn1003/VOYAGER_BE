@@ -30,6 +30,8 @@ public class BoardService {
     private final CropRepository cropRepository;
     private final StorageService storageService;
 
+    private final Integer MINUS_POINT = 200;
+
     // 판매 가능한 작물 목록 불러오기 (harvest=true)
     @Transactional(Transactional.TxType.SUPPORTS)
     public List<BoardSellCropsDto> getSellCrops(Integer userId) {
@@ -43,7 +45,7 @@ public class BoardService {
     }
 
     // 판매 게시글 작성
-    public Integer saveBoard(Integer userId, BoardSaveFormDto dto) {
+    public void saveBoard(Integer userId, BoardSaveFormDto dto) {
         User user = userRepository.getReferenceById(userId);
         Crop crop = cropRepository.getReferenceById(dto.getCropId());
 
@@ -68,7 +70,13 @@ public class BoardService {
         board.setImages(imgs);
 
         // 판매 게시글 저장
-        return boardRepository.save(board).getId();
+        boardRepository.save(board);
+
+        // 유저 포인트 차감
+        user.setPoint(user.getPoint()-MINUS_POINT);
+
+        // 유저 포인트 저장
+        userRepository.save(user);
     }
 
     // 판매 게시글 상세 페이지 정보
@@ -250,5 +258,20 @@ public class BoardService {
         }
 
         return board;
+    }
+
+    // 판매자 포인트 열람
+    public PointResDto getPoint(Integer meId){
+
+        // 판매자 조회
+        User user = userRepository.findById(meId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NOT_FOUND"));
+
+        PointResDto pointResDto = PointResDto.builder()
+                .id(meId)
+                .point(user.getPoint())
+                .build();
+
+        // 판매자 정보 및 보유 포인트 반환
+        return pointResDto;
     }
 }
