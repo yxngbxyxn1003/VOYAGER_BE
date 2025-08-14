@@ -1,6 +1,5 @@
 package com.planty.service.board;
 
-import com.planty.config.CustomUserDetails;
 import com.planty.dto.board.*;
 import com.planty.entity.board.Board;
 import com.planty.entity.board.BoardImage;
@@ -219,6 +218,28 @@ public class BoardService {
                             Integer meId,
                             Boolean sellStatus) {    // 유지할 기존 이미지 URL 목록 (null이면 유지 없음)
 
+        // 대상 게시글 조회 및 소유자 검증
+        Board board = requireOwnBoard(boardId, meId);
+
+        // 판매 상태 변경
+        board.setSell(sellStatus);
+
+        // 저장
+        boardRepository.save(board);
+    }
+
+    // 판매 게시글 삭제
+    public void deleteBoard(Integer boardId, Integer meId) {
+        // 대상 게시글 조회 및 소유자 검증
+        Board board = requireOwnBoard(boardId, meId);
+
+        // 해당 게시글 삭제
+        boardRepository.delete(board);
+    }
+
+    // 게시글 조회 및 소유자 검증
+    private Board requireOwnBoard(Integer boardId,
+                                  Integer meId){
         // 1) 대상 게시글 조회
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NOT_FOUND"));
@@ -228,10 +249,6 @@ public class BoardService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "FORBIDDEN");
         }
 
-        // 판매 상태 변경
-        board.setSell(sellStatus);
-
-        // 5) 저장
-        boardRepository.save(board);
+        return board;
     }
 }
