@@ -4,23 +4,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.planty.common.ApiSuccess;
 import com.planty.config.CustomUserDetails;
-import com.planty.dto.board.BoardDetailResDto;
-import com.planty.dto.board.BoardFormDto;
-import com.planty.dto.board.BoardSaveFormDto;
-import com.planty.dto.board.BoardSellCropsDto;
-import com.planty.entity.board.Board;
-import com.planty.entity.board.BoardImage;
-import com.planty.repository.board.BoardRepository;
-import com.planty.repository.crop.CropRepository;
-import com.planty.repository.user.UserRepository;
+import com.planty.dto.board.*;
 import com.planty.service.board.BoardService;
-import com.planty.service.user.UserService;
 import com.planty.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,7 +18,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 
 // 판매 게시판
@@ -147,6 +136,23 @@ public class BoardController {
 
         // (4) 업데이트
         boardService.updateBoard(id, me.getId(), dto, keepImageUrls);
+
+        // 성공 json 반환
+        return ResponseEntity.ok(new ApiSuccess(200, "성공적으로 처리되었습니다."));
+    }
+
+    // 판매 게시글 판매 상태 수정
+    @PatchMapping(value="/{id:\\d+}")
+    public ResponseEntity<?> updateSellStatus(
+            @AuthenticationPrincipal CustomUserDetails me,
+            @PathVariable Integer id,
+            @RequestBody SellStatusFormDto sellStatusFormDto
+    ) throws IOException {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 판매 상태 업데이트
+        boardService.updateSellStatus(id, me.getId(), sellStatusFormDto.getSellStatus());
 
         // 성공 json 반환
         return ResponseEntity.ok(new ApiSuccess(200, "성공적으로 처리되었습니다."));

@@ -213,4 +213,25 @@ public class BoardService {
             images.get(0).setThumbnail(true);
         }
     }
+
+    // 판매 상태 변경
+    public void updateSellStatus(Integer boardId,
+                            Integer meId,
+                            Boolean sellStatus) {    // 유지할 기존 이미지 URL 목록 (null이면 유지 없음)
+
+        // 1) 대상 게시글 조회
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NOT_FOUND"));
+
+        // 2) 소유자 검증
+        if (!board.getUser().getId().equals(meId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "FORBIDDEN");
+        }
+
+        // 판매 상태 변경
+        board.setSell(sellStatus);
+
+        // 5) 저장
+        boardRepository.save(board);
+    }
 }
