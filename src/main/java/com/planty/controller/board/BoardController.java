@@ -1,5 +1,7 @@
 package com.planty.controller.board;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.planty.common.ApiSuccess;
 import com.planty.config.CustomUserDetails;
 import com.planty.dto.board.BoardDetailResDto;
@@ -51,7 +53,7 @@ public class BoardController {
     }
 
     // 판매 게시글 등록 (JSON+파일)
-    @PostMapping(value="/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value="/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createBoard(
             @AuthenticationPrincipal CustomUserDetails me,
             @RequestPart("form") @Validated BoardFormDto form,  // 판매 게시글 데이터
@@ -97,10 +99,57 @@ public class BoardController {
         if (me == null) return ResponseEntity.status(401).build();
 
         // 판매 게시글 데이터 가져오기
-        BoardDetailResDto dto = boardService.getBoardDetail(id, me);
+        BoardDetailResDto dto = boardService.getBoardDetail(id, me.getId());
 
         // 판매 게시글 데이터 반환
         return ResponseEntity.ok(dto);
+    }
+
+    // 판매 게시글 수정 (JSON + 파일)
+    @PutMapping(value="/{id:\\d+}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateBoard(
+            @AuthenticationPrincipal CustomUserDetails me,
+            @PathVariable Integer id,
+
+            // form 파트는 그대로 DTO 바인딩 가능 (application/json로 보내면 스프링이 매핑해줌)
+            @RequestPart("form") @Validated BoardFormDto form,
+
+            // imageUrls는 JSON 배열로 받기 → String으로 받고 직접 파싱
+            @RequestPart(value = "imageUrls", required = false) String imageUrlsJson,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images
+
+    ) throws IOException {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // (1) 새 파일 업로드 → URL 생성
+        List<String> newUrls = new ArrayList<>();
+        if (images != null) {
+            for (MultipartFile f : images) {
+                if (!f.isEmpty()) newUrls.add(storageService.save(f, "board"));
+            }
+        }
+
+        // (2) JSON 배열 파싱 (null/빈문자열 방어)
+        List<String> keepImageUrls = null;
+        if (imageUrlsJson != null && !imageUrlsJson.isBlank()) {
+            keepImageUrls = new ObjectMapper().readValue(
+                    imageUrlsJson, new TypeReference<List<String>>() {});
+        }
+
+        // (3) 서비스 DTO 구성 (새로 추가된 것만)
+        BoardSaveFormDto dto = new BoardSaveFormDto();
+        dto.setCropId(form.getCropId());
+        dto.setTitle(form.getTitle());
+        dto.setContent(form.getContent());
+        dto.setPrice(form.getPrice());
+        dto.setImageUrls(newUrls);
+
+        // (4) 업데이트
+        boardService.updateBoard(id, me.getId(), dto, keepImageUrls);
+
+        // 성공 json 반환
+        return ResponseEntity.ok(new ApiSuccess(200, "성공적으로 처리되었습니다."));
     }
 }
 
