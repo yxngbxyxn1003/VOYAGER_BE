@@ -20,7 +20,7 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     // 판매 게시글 전체 목록 가져오기
     List<Board> findAllByOrderByCreatedAtDesc();
 
-    // 작물 카테고리, 제목 기준으로 판매 게시글 검색하기
+    // 제목, 카테고리로 판매 게시글 검색하기
     @Query("""
         select distinct b
         from Board b
