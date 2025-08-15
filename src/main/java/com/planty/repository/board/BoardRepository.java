@@ -1,8 +1,11 @@
 package com.planty.repository.board;
 
+import com.planty.dto.board.BoardAllResDto;
 import com.planty.entity.board.Board;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,4 +19,22 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
 
     // 판매 게시글 전체 목록 가져오기
     List<Board> findAllByOrderByCreatedAtDesc();
+
+    // 작물 카테고리, 제목 기준으로 판매 게시글 검색하기
+    @Query("""
+        select distinct b
+        from Board b
+        left join fetch b.images i
+        where b.title like :pattern
+           or exists (
+                select 1 from CropCategory cc
+                where cc.crop = b.crop
+                  and cc.categoryName like :pattern
+           )
+        order by b.createdAt desc
+    """)
+    List<Board> searchByKeyword(@Param("pattern") String pattern);
+
+
+
 }
