@@ -235,5 +235,17 @@ public class BoardController {
         return ResponseEntity.ok(boardService.searchBoards(q));
     }
 
+    // 판매 게시글 재배 일지 상세 내용
+    @GetMapping(value = "/details/diary/details/{diaryId:\\d+}")
+    public ResponseEntity<?> getBoardDiaryDetail(
+            @AuthenticationPrincipal CustomUserDetails me,
+            @PathVariable Integer diaryId
+    ) throws IOException {
+        // 로그인 확인
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 판매 게시글 작물 일지 가져오기
+        return ResponseEntity.ok(boardService.getSellDiaryDetail(diaryId, me.getId()));
+    }
 }
 
