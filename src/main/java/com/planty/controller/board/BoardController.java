@@ -31,7 +31,7 @@ public class BoardController {
 
     // 판매 가능한 작물 가져오기
     @GetMapping("/sell-crops")
-    public ResponseEntity<List<BoardSellCropsDto>> getSellCrops(
+    public ResponseEntity<List<BoardSellCropsResDto>> getSellCrops(
             @AuthenticationPrincipal CustomUserDetails me
     ) {
         // 권한이 없을 때
@@ -42,7 +42,7 @@ public class BoardController {
     }
 
     // 판매 게시글 등록 (JSON+파일)
-    @PostMapping(value="/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value="", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createBoard(
             @AuthenticationPrincipal CustomUserDetails me,
             @RequestPart("form") @Validated BoardFormDto form,  // 판매 게시글 데이터
@@ -184,6 +184,18 @@ public class BoardController {
 
         // 보유 포인트 반환
         return ResponseEntity.ok(boardService.getPoint(me.getId()));
+    }
+
+    // 전체 판매 게시글 조회
+    @GetMapping(value="")
+    public ResponseEntity<?> getBoardList(
+            @AuthenticationPrincipal CustomUserDetails me
+    ) throws IOException {
+        // 로그인 확인
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 판매 가능한 작물 리스트 반환
+        return ResponseEntity.ok(boardService.getAllBoards());
     }
 }
 
