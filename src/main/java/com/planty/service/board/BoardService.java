@@ -302,11 +302,6 @@ public class BoardService {
                 .stream().map(BoardAllResDto::of).toList();
     }
 
-
-
-
-
-
     // 판매 게시글의 재배 일지 목록
     public List<BoardDiaryResDto> getSellDiary(Integer boardId) {
 
