@@ -169,6 +169,32 @@ public class DiaryService {
                 .toList();
     }
 
+    // 재배일지 삭제
+    public void deleteDiary(Integer diaryId, Integer userId) {
+        Diary diary = diaryRepository.findById(diaryId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "재배일지를 찾을 수 없습니다."));
+
+        // 권한 확인 (본인의 재배일지만 삭제 가능)
+        if (!diary.getUser().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "삭제 권한이 없습니다.");
+        }
+
+        // 연관된 이미지 파일들을 파일 시스템에서 삭제
+        if (diary.getImages() != null && !diary.getImages().isEmpty()) {
+            for (DiaryImage image : diary.getImages()) {
+                try {
+                    storageService.delete(image.getDiaryImg());
+                } catch (Exception e) {
+                    // 파일 삭제 실패는 로그만 남기고 진행 (DB 삭제는 계속 진행)
+                    System.err.println("이미지 파일 삭제 실패: " + image.getDiaryImg() + " - " + e.getMessage());
+                }
+            }
+        }
+
+        // 재배일지 삭제 (CASCADE로 관련 이미지들도 자동 삭제됨)
+        diaryRepository.delete(diary);
+    }
+
     // 사용자의 작물 목록 조회 (재배일지 작성용)
     public List<Crop> getUserCrops(Integer userId) {
         User user = userRepository.getReferenceById(userId);
