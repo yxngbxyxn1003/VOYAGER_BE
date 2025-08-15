@@ -16,6 +16,7 @@ public class DiaryDetailDto {
     private String content;
     private String analysis;
     private List<String> images;
+    private String thumbnailImage; // 썸네일 이미지 URL
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
 }
