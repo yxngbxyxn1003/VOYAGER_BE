@@ -4,9 +4,12 @@ import com.planty.dto.board.*;
 import com.planty.entity.board.Board;
 import com.planty.entity.board.BoardImage;
 import com.planty.entity.crop.Crop;
+import com.planty.entity.diary.Diary;
+import com.planty.entity.diary.DiaryImage;
 import com.planty.entity.user.User;
 import com.planty.repository.board.BoardRepository;
 import com.planty.repository.crop.CropRepository;
+import com.planty.repository.diary.DiaryRepository;
 import com.planty.repository.user.UserRepository;
 import com.planty.storage.StorageService;
 import jakarta.transaction.Transactional;
@@ -16,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +34,7 @@ public class BoardService {
     private final UserRepository userRepository;
     private final CropRepository cropRepository;
     private final StorageService storageService;
+    private final DiaryRepository diaryRepository;
 
     private final Integer MINUS_POINT = 200;
 
@@ -263,7 +268,6 @@ public class BoardService {
 
     // 판매자 포인트 열람
     public PointResDto getPoint(Integer meId){
-
         // 판매자 조회
         User user = userRepository.findById(meId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NOT_FOUND"));
 
@@ -299,8 +303,49 @@ public class BoardService {
                 .stream().map(BoardAllResDto::of).toList();
     }
 
+    // 판매 게시글의 재배 일지 목록
+    public List<BoardDiaryResDto> getSellDiary(Integer boardId) {
 
+        // 작물 아이디 가져오기
+        Integer cropId = boardRepository.findCropIdByBoardId(boardId);
 
+        // 재배 일지 목록 가져오기
+        List<Diary> diaries = diaryRepository.findByCropIdOrderByCreatedAtDesc(cropId);
 
+        // DTO로 변환
+        return diaries.stream()
+                .map(BoardDiaryResDto::of)
+                .toList();
+    }
 
+    // 판매 게시글의 재배 일지 상세 페이지
+    public BoardDiaryDetailResDto getSellDiaryDetail(Integer diaryId, Integer meId) {
+        // 대상 재배 일지 조회
+        Diary diary = diaryRepository.findById(diaryId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NOT_FOUND"));
+
+        // 소유자 여부
+        boolean isOwner = diary.getUser().getId().equals(meId);
+
+        // 판매 게시글 이미지 처리
+        List<String> images = Optional.ofNullable(diary.getImages())
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(DiaryImage::getDiaryImg)
+                .toList();
+
+        // 날짜만 추출
+        String time = diary.getCreatedAt()
+                .format(DateTimeFormatter.ofPattern("yyyy.MM.dd."));
+
+        // 프론트에 보내주는 Dto 반환
+        return BoardDiaryDetailResDto.builder()
+                .diaryId(diary.getId())
+                .title(diary.getTitle())
+                .content(diary.getContent())
+                .images(images)
+                .time(time)
+                .isOwner(isOwner)
+                .build();
+    }
 }
