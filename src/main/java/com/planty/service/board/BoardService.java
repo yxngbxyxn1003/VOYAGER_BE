@@ -279,7 +279,7 @@ public class BoardService {
     public List<BoardAllResDto> getAllBoards() {
 
         // 전체 게시글 목록 가져오기
-        List<Board> boards = boardRepository.findAll();
+        List<Board> boards = boardRepository.findAllByOrderByCreatedAtDesc();
 
         // DTO로 변환
         return boards.stream()
