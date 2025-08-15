@@ -3,6 +3,7 @@ package com.planty.entity.user;
 import com.planty.dto.user.SignupFormDto;
 import com.planty.entity.board.Board;
 import com.planty.entity.crop.Crop;
+import com.planty.entity.diary.Diary;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -46,6 +47,9 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Board> boards = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Diary> diaries = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;
