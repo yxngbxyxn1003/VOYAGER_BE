@@ -138,4 +138,20 @@ public class DiaryController {
 
         return ResponseEntity.ok(diaries);
     }
+
+    // 재배일지 삭제
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteDiary(
+            @AuthenticationPrincipal CustomUserDetails me,
+            @PathVariable Integer id
+    ) {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 재배일지 삭제 (권한 체크 포함)
+        diaryService.deleteDiary(id, me.getId());
+
+        // 성공 응답
+        return ResponseEntity.ok(new ApiSuccess(200, "재배일지가 성공적으로 삭제되었습니다."));
+    }
 }

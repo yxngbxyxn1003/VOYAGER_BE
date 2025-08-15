@@ -7,6 +7,7 @@ import com.planty.config.CustomUserDetails;
 import com.planty.dto.board.*;
 import com.planty.service.board.BoardService;
 import com.planty.storage.StorageService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -210,5 +211,29 @@ public class BoardController {
         // 판매 게시글 작물 일지 가져오기
         return ResponseEntity.ok(boardService.getSellDiary(boardId));
     }
+
+    // 판매 게시글 검색
+    @GetMapping("/search")
+    public ResponseEntity<?> searchBoards(
+            @AuthenticationPrincipal CustomUserDetails me,
+            @RequestParam(value = "q", required = false) List<String> qList,
+            HttpServletRequest req
+    ) {
+        // 로그인 확인
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 마지막 비어있지 않은 값 사용 (중복 파라미터 방어)
+        String q = null;
+        if (qList != null) {
+            for (int i = qList.size() - 1; i >= 0; i--) {
+                String v = qList.get(i);
+                if (v != null && !v.isBlank()) { q = v; break; }
+            }
+        }
+
+        // 검색 결과 반환
+        return ResponseEntity.ok(boardService.searchBoards(q));
+    }
+
 }
 

@@ -19,6 +19,7 @@ public class BoardAllResDto {
     private Integer price;
     private String thumbnailImg;
     private String time;
+    private Boolean sell;
 
     // 엔티티 -> DTO 반환
     public static BoardAllResDto of(Board board) {
@@ -40,6 +41,7 @@ public class BoardAllResDto {
                 .price(board.getPrice())
                 .time(time)
                 .thumbnailImg(thumbnailUrl)
+                .sell(board.getSell())
                 .build();
     }
 

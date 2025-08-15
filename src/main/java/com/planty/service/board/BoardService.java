@@ -13,6 +13,7 @@ import com.planty.repository.user.UserRepository;
 import com.planty.storage.StorageService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -289,6 +290,22 @@ public class BoardService {
                 .map(BoardAllResDto::of)
                 .toList();
     }
+
+    // 검색어로 판매 게시글 검색
+    public List<BoardAllResDto> searchBoards(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return boardRepository.findAllByOrderByCreatedAtDesc()
+                    .stream().map(BoardAllResDto::of).toList();
+        }
+        String pattern = "%" + keyword.trim() + "%";
+        return boardRepository.searchByKeyword(pattern)
+                .stream().map(BoardAllResDto::of).toList();
+    }
+
+
+
+
+
 
     // 판매 게시글의 재배 일지 목록
     public List<BoardDiaryResDto> getSellDiary(Integer boardId) {
