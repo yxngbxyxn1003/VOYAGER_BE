@@ -34,6 +34,11 @@ public class DiaryService {
         User user = userRepository.getReferenceById(userId);
         Crop crop = cropRepository.getReferenceById(dto.getCropId());
 
+        // 이미지 개수 검증 (최대 3개)
+        if (imageUrls != null && imageUrls.size() > 3) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지는 최대 3개까지만 업로드할 수 있습니다.");
+        }
+
         // 재배일지 생성 및 데이터 삽입
         Diary diary = new Diary();
         diary.setUser(user);
@@ -42,21 +47,32 @@ public class DiaryService {
         diary.setContent(dto.getContent());
         diary.setAnalysis(dto.getAnalysis()); // AI 분석 결과
 
-        // 재배일지 이미지 삽입
+        // 재배일지 이미지 삽입 및 썸네일 설정
         if (imageUrls != null && !imageUrls.isEmpty()) {
-            List<DiaryImage> imgs = new ArrayList<>();
-            for (int i = 0; i < imageUrls.size(); i++) {
-                DiaryImage di = new DiaryImage();
-                di.setDiary(diary);
-                di.setDiaryImg(imageUrls.get(i));
-                di.setThumbnail(i == 0); // 첫 번째 이미지를 썸네일로 설정
-                imgs.add(di);
-            }
+            List<DiaryImage> imgs = createDiaryImages(diary, imageUrls);
             diary.setImages(imgs);
         }
 
         // 재배일지 저장
         diaryRepository.save(diary);
+    }
+
+    // 재배일지 이미지 생성 및 썸네일 설정
+    private List<DiaryImage> createDiaryImages(Diary diary, List<String> imageUrls) {
+        List<DiaryImage> imgs = new ArrayList<>();
+        
+        for (int i = 0; i < imageUrls.size() && i < 3; i++) { // 최대 3개까지만 처리
+            String imageUrl = imageUrls.get(i);
+            if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                DiaryImage di = new DiaryImage();
+                di.setDiary(diary);
+                di.setDiaryImg(imageUrl);
+                di.setThumbnail(i == 0); // 첫 번째 이미지만 썸네일로 설정
+                imgs.add(di);
+            }
+        }
+        
+        return imgs;
     }
 
     // 재배일지 상세 조회
@@ -71,6 +87,15 @@ public class DiaryService {
                 .map(DiaryImage::getDiaryImg)
                 .toList();
 
+        // 썸네일 이미지 찾기
+        String thumbnailImage = Optional.ofNullable(diary.getImages())
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(DiaryImage::getThumbnail)
+                .map(DiaryImage::getDiaryImg)
+                .findFirst()
+                .orElse(null);
+
         // 재배일지 정보
         DiaryDetailDto diaryDetailDto = DiaryDetailDto.builder()
                 .diaryId(diary.getId())
@@ -80,6 +105,7 @@ public class DiaryService {
                 .content(diary.getContent())
                 .analysis(diary.getAnalysis())
                 .images(images)
+                .thumbnailImage(thumbnailImage)
                 .createdAt(diary.getCreatedAt())
                 .modifiedAt(diary.getModifiedAt())
                 .build();
@@ -147,5 +173,33 @@ public class DiaryService {
     public List<Crop> getUserCrops(Integer userId) {
         User user = userRepository.getReferenceById(userId);
         return user.getCrops();
+    }
+
+    // 썸네일 이미지 URL 추출 유틸리티 메서드
+    private String extractThumbnailImage(List<DiaryImage> images) {
+        if (images == null || images.isEmpty()) {
+            return null;
+        }
+        
+        return images.stream()
+                .filter(DiaryImage::getThumbnail)
+                .map(DiaryImage::getDiaryImg)
+                .findFirst()
+                .orElse(images.get(0).getDiaryImg()); // 썸네일이 없으면 첫 번째 이미지 반환
+    }
+
+    // 이미지 목록에서 썸네일 보장 (첫 번째 이미지를 썸네일로 설정)
+    private void ensureThumbnailExists(List<DiaryImage> images) {
+        if (images == null || images.isEmpty()) {
+            return;
+        }
+
+        // 기존 썸네일이 있는지 확인
+        boolean hasThumbnail = images.stream().anyMatch(DiaryImage::getThumbnail);
+        
+        if (!hasThumbnail) {
+            // 썸네일이 없으면 첫 번째 이미지를 썸네일로 설정
+            images.get(0).setThumbnail(true);
+        }
     }
 }

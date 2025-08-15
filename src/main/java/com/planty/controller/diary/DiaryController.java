@@ -50,6 +50,12 @@ public class DiaryController {
         // 권한이 없을 때
         if (me == null) return ResponseEntity.status(401).build();
 
+        // 이미지 개수 검증 (최대 3개)
+        if (images != null && images.size() > 3) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiSuccess(400, "이미지는 최대 3개까지만 업로드할 수 있습니다."));
+        }
+
         // 파일 저장 → URL 리스트 생성
         List<String> urls = new ArrayList<>();
         if (images != null) {
@@ -58,6 +64,12 @@ public class DiaryController {
                     urls.add(storageService.save(f, "diary"));
                 }
             }
+        }
+
+        // 이미지 URL 개수 재검증 (빈 파일 제외 후)
+        if (urls.size() > 3) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiSuccess(400, "유효한 이미지는 최대 3개까지만 업로드할 수 있습니다."));
         }
 
         // 서비스 호출
