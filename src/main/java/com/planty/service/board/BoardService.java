@@ -34,13 +34,13 @@ public class BoardService {
 
     // 판매 가능한 작물 목록 불러오기 (harvest=true)
     @Transactional(Transactional.TxType.SUPPORTS)
-    public List<BoardSellCropsDto> getSellCrops(Integer userId) {
+    public List<BoardSellCropsResDto> getSellCrops(Integer userId) {
         // 수확 완료 작물 목록을 최신순으로 조회
         List<Crop> crops = cropRepository.findByUser_IdAndHarvestTrueOrderByCreatedAtDesc(userId);
 
         // Crop 엔티티를 BoardSellCropsDto로 변환, 리스트로 반환
         return crops.stream()
-                .map(BoardSellCropsDto::of)
+                .map(BoardSellCropsResDto::of)
                 .toList();
     }
 
@@ -273,5 +273,17 @@ public class BoardService {
 
         // 판매자 정보 및 보유 포인트 반환
         return pointResDto;
+    }
+
+    // 전체 게시글 목록
+    public List<BoardAllResDto> getAllBoards() {
+
+        // 전체 게시글 목록 가져오기
+        List<Board> boards = boardRepository.findAll();
+
+        // DTO로 변환
+        return boards.stream()
+                .map(BoardAllResDto::of)
+                .toList();
     }
 }
