@@ -4,9 +4,11 @@ import com.planty.dto.board.*;
 import com.planty.entity.board.Board;
 import com.planty.entity.board.BoardImage;
 import com.planty.entity.crop.Crop;
+import com.planty.entity.diary.Diary;
 import com.planty.entity.user.User;
 import com.planty.repository.board.BoardRepository;
 import com.planty.repository.crop.CropRepository;
+import com.planty.repository.diary.DiaryRepository;
 import com.planty.repository.user.UserRepository;
 import com.planty.storage.StorageService;
 import jakarta.transaction.Transactional;
@@ -29,6 +31,7 @@ public class BoardService {
     private final UserRepository userRepository;
     private final CropRepository cropRepository;
     private final StorageService storageService;
+    private final DiaryRepository diaryRepository;
 
     private final Integer MINUS_POINT = 200;
 
@@ -284,6 +287,21 @@ public class BoardService {
         // DTO로 변환
         return boards.stream()
                 .map(BoardAllResDto::of)
+                .toList();
+    }
+
+    // 판매 게시글의 재배 일지 목록
+    public List<BoardDiaryResDto> getSellDiary(Integer boardId) {
+
+        // 작물 아이디 가져오기
+        Integer cropId = boardRepository.findCropIdByBoardId(boardId);
+
+        // 재배 일지 목록 가져오기
+        List<Diary> diaries = diaryRepository.findByCropIdOrderByCreatedAtDesc(cropId);
+
+        // DTO로 변환
+        return diaries.stream()
+                .map(BoardDiaryResDto::of)
                 .toList();
     }
 }

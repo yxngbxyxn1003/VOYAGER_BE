@@ -197,5 +197,18 @@ public class BoardController {
         // 판매 가능한 작물 리스트 반환
         return ResponseEntity.ok(boardService.getAllBoards());
     }
+
+    // 판매 게시글의 재배 일지 목록
+    @GetMapping(value = "/details/diary/{boardId:\\d+}")
+    public ResponseEntity<?> getBoardDiaryList(
+            @AuthenticationPrincipal CustomUserDetails me,
+            @PathVariable Integer boardId
+    ) throws IOException {
+        // 로그인 확인
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 판매 게시글 작물 일지 가져오기
+        return ResponseEntity.ok(boardService.getSellDiary(boardId));
+    }
 }
 
