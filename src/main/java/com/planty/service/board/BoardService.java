@@ -53,6 +53,12 @@ public class BoardService {
     // 판매 게시글 작성
     public void saveBoard(Integer userId, BoardSaveFormDto dto) {
         User user = userRepository.getReferenceById(userId);
+
+        // 보유 포인트가 적으면 실패
+        if (user.getPoint() < MINUS_POINT) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NOT_ENOUGH_POINT");
+        }
+
         Crop crop = cropRepository.getReferenceById(dto.getCropId());
 
         // 판매 게시글 생성 및 데이터 삽입

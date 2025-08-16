@@ -8,6 +8,6 @@ import java.util.List;
 
 // 작물 레포지토리
 public interface CropRepository extends JpaRepository<Crop, Integer> {
-    // 판매 가능한 작물 목록 불러오기 (판매 게시판)
+    // 재배 완료된 작물 불러오기
     List<Crop> findByUser_IdAndHarvestTrueOrderByCreatedAtDesc(Integer userId);
 }
