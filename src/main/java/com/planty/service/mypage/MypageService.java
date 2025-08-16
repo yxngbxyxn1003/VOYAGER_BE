@@ -1,11 +1,14 @@
 package com.planty.service.mypage;
 
 
+import com.planty.dto.mypage.MyHarvestCropResDto;
 import com.planty.dto.mypage.MySellBoardResDto;
 import com.planty.dto.mypage.ProfileResDto;
 import com.planty.entity.board.Board;
+import com.planty.entity.crop.Crop;
 import com.planty.entity.user.User;
 import com.planty.repository.board.BoardRepository;
+import com.planty.repository.crop.CropRepository;
 import com.planty.repository.mypage.MypageRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +25,7 @@ public class MypageService {
 
     private final MypageRepository mypageRepository;
     private final BoardRepository boardRepository;
+    private final CropRepository cropRepository;
 
     // 프로필 정보 불러오기
     public ProfileResDto getProfile(Integer userId) {
@@ -39,16 +43,23 @@ public class MypageService {
 
     // 내가 쓴 판매 게시글 불러오기
     public List<MySellBoardResDto> getMySellBoard(Integer userId) {
-        // 유저 확인
-        User user = mypageRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없음: " + userId));
-
         // 내가 쓴 판매 게시글 중 판매 중인 게시글
         List<Board> boards = boardRepository.findMyBoardsOrderByStatusAndCreated(userId);
 
         // DTO로 변환
         return boards.stream()
                 .map(MySellBoardResDto::of)
+                .toList();
+    }
+
+    // 내 재배 완료된 작물 불러오기
+    public List<MyHarvestCropResDto> getMyHarvestCrop(Integer userId) {
+        // 내 재배 완료된 작물 엔티티
+        List<Crop> crops = cropRepository.findByUser_IdAndHarvestTrueOrderByCreatedAtDesc(userId);
+
+        // DTO로 변환
+        return crops.stream()
+                .map(MyHarvestCropResDto::of)
                 .toList();
     }
 }

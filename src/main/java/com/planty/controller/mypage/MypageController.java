@@ -41,4 +41,16 @@ public class MypageController {
         // 내가 쓴 판매 게시글 반환
         return ResponseEntity.ok(mypageService.getMySellBoard(me.getId()));
     }
+
+    // 재배 완료된 작물 가져오기
+    @GetMapping("/harvest-crop")
+    public ResponseEntity<?> getHarvestCrop(
+            @AuthenticationPrincipal CustomUserDetails me
+    ) {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 재배 완료된 작물 가져오기
+        return ResponseEntity.ok(mypageService.getMyHarvestCrop(me.getId()));
+    }
 }
