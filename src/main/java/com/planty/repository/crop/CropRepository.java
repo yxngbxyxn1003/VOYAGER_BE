@@ -27,4 +27,7 @@ public interface CropRepository extends JpaRepository<Crop, Integer> {
     // 사용자의 최근 등록된 작물 조회
     @Query("SELECT c FROM Crop c WHERE c.user = :user AND c.isRegistered = true ORDER BY c.createdAt DESC")
     List<Crop> findRecentRegisteredCropsByUser(@Param("user") User user);
+  
+    // 재배 완료된 작물 불러오기
+    List<Crop> findByUser_IdAndHarvestTrueOrderByCreatedAtDesc(Integer userId);
 }

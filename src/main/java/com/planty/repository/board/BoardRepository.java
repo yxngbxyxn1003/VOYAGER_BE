@@ -35,6 +35,18 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     """)
     List<Board> searchByKeyword(@Param("pattern") String pattern);
 
+    // 게시글 기준으로 crop 아이디 가져오기
+    @Query("select b.crop.id from Board b where b.id = :boardId")
+    Integer findCropIdByBoardId(@Param("boardId") Integer boardId);
 
+    // 내가 쓴 판매 게시글 불러오기
+    @Query("""
+        select b
+        from Board b
+        left join fetch b.images
+        where b.user.id = :userId
+        order by b.sell asc, b.createdAt desc
+    """)
+    List<Board> findMyBoardsOrderByStatusAndCreated(@Param("userId") Integer userId);
 
 }

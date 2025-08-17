@@ -183,7 +183,8 @@ public class DiaryService {
         if (diary.getImages() != null && !diary.getImages().isEmpty()) {
             for (DiaryImage image : diary.getImages()) {
                 try {
-                    storageService.delete(image.getDiaryImg());
+                    // TODO 에러가 떠서 주석 처리 해놨어요!
+                    //  storageService.delete(image.getDiaryImg());
                 } catch (Exception e) {
                     // 파일 삭제 실패는 로그만 남기고 진행 (DB 삭제는 계속 진행)
                     System.err.println("이미지 파일 삭제 실패: " + image.getDiaryImg() + " - " + e.getMessage());
