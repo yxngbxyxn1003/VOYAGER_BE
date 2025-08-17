@@ -37,4 +37,10 @@ jwt:
   access-exp-millis: 86400000     # 1시간
 
 app:
-  upload-dir: uploads
+  upload:
+    path: uploads/crop/
+    
+# OpenAI API 설정
+openai:
+  api:
+    key: ${OPENAI_API_KEY:your-openai-api-key-here}
