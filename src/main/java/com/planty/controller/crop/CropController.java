@@ -274,4 +274,61 @@ public class CropController {
                 .body(new CropDetailAnalysisResult(false, "분석에 실패했습니다: " + e.getMessage(), analysisType));
         }
     }
+
+    /**
+     * 작물 분석 완료 후 재배일지 작성 폼으로 이동 (AI 분석 결과 포함)
+     */
+    @GetMapping("/{cropId}/create-diary")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> createDiaryWithCropAnalysis(
+            @PathVariable Integer cropId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            User user = userDetails.getUser();
+            Crop crop = cropService.getCropById(cropId);
+            
+            // 권한 확인
+            if (!crop.getUser().getId().equals(user.getId())) {
+                response.put("success", false);
+                response.put("message", "권한이 없습니다.");
+                return ResponseEntity.forbidden().body(response);
+            }
+            
+            // 분석이 완료된 작물만 가능
+            if (crop.getAnalysisStatus() != AnalysisStatus.COMPLETED) {
+                response.put("success", false);
+                response.put("message", "분석이 완료되지 않은 작물입니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 작물 정보와 AI 분석 결과를 포함한 응답
+            Map<String, Object> cropInfo = new HashMap<>();
+            cropInfo.put("id", crop.getId());
+            cropInfo.put("name", crop.getName());
+            cropInfo.put("cropImg", crop.getCropImg());
+            
+            // AI 분석 결과
+            Map<String, String> analysisResult = new HashMap<>();
+            analysisResult.put("environment", crop.getEnvironment());
+            analysisResult.put("temperature", crop.getTemperature());
+            analysisResult.put("height", crop.getHeight());
+            analysisResult.put("howTo", crop.getHowTo());
+            
+            response.put("success", true);
+            response.put("crop", cropInfo);
+            response.put("analysisResult", analysisResult);
+            response.put("message", "재배일지 작성 정보를 가져왔습니다.");
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("재배일지 작성 정보 조회 실패", e);
+            response.put("success", false);
+            response.put("message", "정보 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 }
