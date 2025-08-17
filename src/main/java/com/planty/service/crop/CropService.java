@@ -3,6 +3,7 @@ package com.planty.service.crop;
 import com.planty.dto.crop.CropAnalysisResult;
 import com.planty.dto.crop.CropDetailAnalysisResult;
 import com.planty.dto.crop.CropRegistrationDto;
+import com.planty.dto.crop.HomeCropDto;
 import com.planty.entity.crop.AnalysisStatus;
 import com.planty.entity.crop.AnalysisType;
 import com.planty.entity.crop.Crop;
@@ -19,9 +20,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -205,6 +208,32 @@ public class CropService {
         }
         
         cropRepository.delete(crop);
+    }
+
+    /**
+     * 홈 화면용 사용자 작물 목록 조회 (등록된 것과 미등록된 것 모두)
+     */
+    @Transactional(readOnly = true)
+    public List<HomeCropDto> getHomeCrops(User user) {
+        List<Crop> crops = cropRepository.findByUserOrderByCreatedAtDesc(user);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일");
+        
+        return crops.stream()
+                .map(crop -> {
+                    HomeCropDto dto = new HomeCropDto();
+                    dto.setId(crop.getId());
+                    dto.setName(crop.getName() != null ? crop.getName() : "분석 중인 작물");
+                    dto.setCropImg(crop.getCropImg());
+                    dto.setPlantingDate(crop.getStartAt() != null ? 
+                        crop.getStartAt().format(formatter) : 
+                        "재배 시작일 미입력");
+                    dto.setIsRegistered(crop.getIsRegistered());
+                    dto.setAnalysisStatus(crop.getAnalysisStatus().toString());
+                    dto.setCropCategory(crop.getCropCategory() != null ? 
+                        crop.getCropCategory().toString() : "미분류");
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     /**
