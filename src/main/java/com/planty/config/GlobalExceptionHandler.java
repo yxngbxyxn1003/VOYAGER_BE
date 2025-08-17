@@ -73,6 +73,7 @@ public class GlobalExceptionHandler {
             case "INVALID_CREDENTIALS" -> "아이디 또는 비밀번호가 올바르지 않습니다.";
             case "NOT_FOUND" -> "존재하지 않는 페이지입니다.";
             case "FORBIDDEN" -> "권한이 없습니다";
+            case "NOT_ENOUGH_POINT" -> "포인트가 부족합니다.";
             default -> "요청을 처리할 수 없습니다.";
         };
         return ApiError.of(ex.getStatusCode().value(), code != null ? code : "ERROR", msg);
