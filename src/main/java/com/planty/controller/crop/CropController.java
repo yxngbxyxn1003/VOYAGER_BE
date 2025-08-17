@@ -2,7 +2,9 @@ package com.planty.controller.crop;
 
 import com.planty.config.CustomUserDetails;
 import com.planty.dto.crop.CropRegistrationDto;
+import com.planty.dto.crop.CropDetailAnalysisResult;
 import com.planty.entity.crop.AnalysisStatus;
+import com.planty.entity.crop.AnalysisType;
 import com.planty.entity.crop.Crop;
 import com.planty.entity.user.User;
 import com.planty.service.crop.CropService;
@@ -232,6 +234,44 @@ public class CropController {
             response.put("success", false);
             response.put("message", "작물 삭제에 실패했습니다: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 작물 세부 분석 (현재상태, 질병여부, 품질/시장성)
+     */
+    @PostMapping("/analyze-detail/{cropId}")
+    @ResponseBody
+    public ResponseEntity<CropDetailAnalysisResult> analyzeCropDetail(
+            @PathVariable Integer cropId,
+            @RequestParam("analysisType") AnalysisType analysisType,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        try {
+            User user = userDetails.getUser();
+            Crop crop = cropService.getCropById(cropId);
+            
+            // 권한 확인
+            if (!crop.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(403)
+                    .body(new CropDetailAnalysisResult(false, "권한이 없습니다.", analysisType));
+            }
+            
+            // 등록된 작물만 세부 분석 가능
+            if (!crop.getIsRegistered()) {
+                return ResponseEntity.badRequest()
+                    .body(new CropDetailAnalysisResult(false, "등록되지 않은 작물은 분석할 수 없습니다.", analysisType));
+            }
+            
+            // 세부 분석 수행
+            CropDetailAnalysisResult result = cropService.analyzeCropDetail(crop, analysisType);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            log.error("작물 세부 분석 실패", e);
+            return ResponseEntity.badRequest()
+                .body(new CropDetailAnalysisResult(false, "분석에 실패했습니다: " + e.getMessage(), analysisType));
         }
     }
 }
