@@ -19,4 +19,6 @@ public class DiaryFormDto {
     private String content;
 
     private String analysis; // AI 분석 결과 (옵션)
+    
+    private Boolean includeAnalysis = false; // AI 분석 결과 포함 여부 (기본값: false)
 }

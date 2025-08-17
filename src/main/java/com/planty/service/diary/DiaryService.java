@@ -34,9 +34,9 @@ public class DiaryService {
         User user = userRepository.getReferenceById(userId);
         Crop crop = cropRepository.getReferenceById(dto.getCropId());
 
-        // 이미지 개수 검증 (최대 3개)
-        if (imageUrls != null && imageUrls.size() > 3) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지는 최대 3개까지만 업로드할 수 있습니다.");
+        // 이미지 개수 검증 (최대 9개)
+        if (imageUrls != null && imageUrls.size() > 9) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지는 최대 9개까지만 업로드할 수 있습니다.");
         }
 
         // 재배일지 생성 및 데이터 삽입
@@ -45,7 +45,26 @@ public class DiaryService {
         diary.setCrop(crop);
         diary.setTitle(dto.getTitle());
         diary.setContent(dto.getContent());
-        diary.setAnalysis(dto.getAnalysis()); // AI 분석 결과
+        
+        // AI 분석 결과 선택적 포함
+        if (dto.getIncludeAnalysis() != null && dto.getIncludeAnalysis()) {
+            // 사용자가 AI 분석 결과 포함을 선택한 경우
+            if (dto.getAnalysis() != null && !dto.getAnalysis().trim().isEmpty()) {
+                // 직접 입력한 분석 결과가 있는 경우 우선 사용
+                diary.setAnalysis(dto.getAnalysis());
+            } else {
+                // 직접 입력한 분석 결과가 없는 경우 작물의 AI 분석 결과 사용 (있다면)
+                String cropAnalysis = buildCropAnalysisText(crop);
+                if (!cropAnalysis.isEmpty()) {
+                    diary.setAnalysis(cropAnalysis);
+                } else {
+                    diary.setAnalysis(null);
+                }
+            }
+        } else {
+            // 사용자가 AI 분석 결과 포함을 선택하지 않은 경우
+            diary.setAnalysis(null);
+        }
 
         // 재배일지 이미지 삽입 및 썸네일 설정
         if (imageUrls != null && !imageUrls.isEmpty()) {
@@ -56,12 +75,35 @@ public class DiaryService {
         // 재배일지 저장
         diaryRepository.save(diary);
     }
+    
+    // 작물의 AI 분석 결과를 텍스트로 변환
+    private String buildCropAnalysisText(Crop crop) {
+        StringBuilder analysisText = new StringBuilder();
+        
+        if (crop.getEnvironment() != null && !crop.getEnvironment().trim().isEmpty()) {
+            analysisText.append("환경: ").append(crop.getEnvironment()).append("\n\n");
+        }
+        
+        if (crop.getTemperature() != null && !crop.getTemperature().trim().isEmpty()) {
+            analysisText.append("온도: ").append(crop.getTemperature()).append("\n\n");
+        }
+        
+        if (crop.getHeight() != null && !crop.getHeight().trim().isEmpty()) {
+            analysisText.append("높이: ").append(crop.getHeight()).append("\n\n");
+        }
+        
+        if (crop.getHowTo() != null && !crop.getHowTo().trim().isEmpty()) {
+            analysisText.append("재배법: ").append(crop.getHowTo()).append("\n\n");
+        }
+        
+        return analysisText.toString().trim();
+    }
 
     // 재배일지 이미지 생성 및 썸네일 설정
     private List<DiaryImage> createDiaryImages(Diary diary, List<String> imageUrls) {
         List<DiaryImage> imgs = new ArrayList<>();
         
-        for (int i = 0; i < imageUrls.size() && i < 3; i++) { // 최대 3개까지만 처리
+        for (int i = 0; i < imageUrls.size() && i < 9; i++) { // 최대 9개까지 처리
             String imageUrl = imageUrls.get(i);
             if (imageUrl != null && !imageUrl.trim().isEmpty()) {
                 DiaryImage di = new DiaryImage();
@@ -196,10 +238,12 @@ public class DiaryService {
         diaryRepository.delete(diary);
     }
 
-    // 사용자의 작물 목록 조회 (재배일지 작성용)
+    // 사용자의 작물 목록 조회 (재배일지 작성용) - 등록된 작물만 반환
     public List<Crop> getUserCrops(Integer userId) {
         User user = userRepository.getReferenceById(userId);
-        return user.getCrops();
+        return user.getCrops().stream()
+                .filter(crop -> crop.getIsRegistered() != null && crop.getIsRegistered())
+                .toList();
     }
 
     // 썸네일 이미지 URL 추출 유틸리티 메서드
