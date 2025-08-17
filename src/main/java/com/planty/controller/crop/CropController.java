@@ -3,6 +3,7 @@ package com.planty.controller.crop;
 import com.planty.config.CustomUserDetails;
 import com.planty.dto.crop.CropRegistrationDto;
 import com.planty.dto.crop.CropDetailAnalysisResult;
+import com.planty.dto.crop.HomeCropDto;
 import com.planty.entity.crop.AnalysisStatus;
 import com.planty.entity.crop.AnalysisType;
 import com.planty.entity.crop.Crop;
@@ -179,6 +180,33 @@ public class CropController {
             log.error("작물 상세 조회 실패", e);
             model.addAttribute("error", "작물 정보를 찾을 수 없습니다.");
             return "error/404";
+        }
+    }
+
+    /**
+     * 홈 화면용 작물 목록 조회 (등록된 것과 미등록된 것 모두)
+     */
+    @GetMapping("/home")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getHomeCrops(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            User user = userDetails.getUser();
+            List<HomeCropDto> homeCrops = cropService.getHomeCrops(user);
+            
+            response.put("success", true);
+            response.put("crops", homeCrops);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("홈 화면용 작물 목록 조회 실패", e);
+            response.put("success", false);
+            response.put("message", "작물 목록 조회에 실패했습니다.");
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
