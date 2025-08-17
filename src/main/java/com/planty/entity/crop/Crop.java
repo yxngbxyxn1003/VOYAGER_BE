@@ -40,6 +40,15 @@ public class Crop {
     private String height;
     private String howTo;
 
+    // 분석 상태 관리
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AnalysisStatus analysisStatus = AnalysisStatus.PENDING;
+
+    // 작물 등록 상태 (이미지 업로드 후 분석 완료되기 전까지는 false)
+    @Column(nullable = false)
+    private Boolean isRegistered = false;
+
     private Boolean harvest;
 
     @OneToMany(mappedBy = "crop", cascade = CascadeType.ALL, orphanRemoval = true)
