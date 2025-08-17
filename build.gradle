@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.3'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'application'
 }
 
 group = 'com.app'
@@ -95,6 +96,11 @@ dependencies {
 
     // 파일 용량 예외 처리
     implementation 'commons-fileupload:commons-fileupload:1.5'
+
+    // 웹소켓
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    // 웹클라이언트
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
 }
 
 def querydslDir = "$buildDir/generated/sources/annotaionProcessor/java"
@@ -121,4 +127,8 @@ tasks.named('test') {
 
 test {
     useJUnitPlatform()
+}
+
+application {
+    mainClass = 'com.planty.PlantyApplication'
 }

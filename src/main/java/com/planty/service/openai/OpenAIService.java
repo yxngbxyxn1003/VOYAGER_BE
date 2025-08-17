@@ -228,7 +228,7 @@ public class OpenAIService {
 //                "{\\n" +
 //                "  \\"currentStatusSummary\\": \\"현재 상태 종합 분석 내용\\"\\n" +
 //                "}";
-                
+
 //            case DISEASE_CHECK ->
 //                "이 작물 이미지를 분석하여 질병 여부를 진단해주세요. " +
 //                "병충해 감염 여부, 구체적인 질병명, 예방 및 치료 방법을 JSON 형태로 제공해주세요.\\n" +
@@ -238,7 +238,7 @@ public class OpenAIService {
 //                "  \\"diseaseDetails\\": \\"발견된 질병이나 문제점 상세 설명\\",\\n" +
 //                "  \\"preventionMethods\\": \\"예방 및 치료 방법\\"\\n" +
 //                "}";
-                
+
 //            case QUALITY_MARKET ->
 //                "이 작물 이미지를 분석하여 품질과 시장성을 평가해주세요. " +
 //                "출하시 상품 비율, 색상 품질, 맛과 저장성, 운송 저항성 등을 JSON 형태로 제공해주세요.\\n" +
