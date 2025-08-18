@@ -72,11 +72,12 @@ public class AiChatService {
     }
 
     // WebClient로 OpenAI GPT-4.1 호출
+    @SuppressWarnings("unchecked")
     public String callOpenAi(String userMessage) {
         Map<String, Object> requestBody = Map.of(
                 "model", "gpt-4.1",
                 "messages", List.of(
-                        Map.of("role", "system", "content", "너는 친절한 농업 조수야."),
+                        Map.of("role", "system", "content", "너는 친절한 농업 조수야. 500자 이내로 답변해."),
                         Map.of("role", "user", "content", userMessage)
                 ),
                 "max_tokens", 500,

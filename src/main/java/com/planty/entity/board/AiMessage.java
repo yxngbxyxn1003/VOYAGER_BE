@@ -20,7 +20,7 @@ public class AiMessage {
     @JoinColumn(name = "aiChatId", nullable = false)
     private AiChat aiChat;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 2000)
     private String content;
 
     @Column(nullable = false)

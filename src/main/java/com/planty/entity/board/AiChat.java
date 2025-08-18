@@ -1,5 +1,6 @@
 package com.planty.entity.board;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.planty.entity.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,6 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonIgnoreProperties({"messages"})
 public class AiChat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
