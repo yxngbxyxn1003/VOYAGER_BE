@@ -8,6 +8,7 @@ import lombok.Getter;
 @Getter @Builder
 public class ProfileResDto {
     private Integer id;
+    private String userId;
     private String name;
     private Integer point;
     private String profileImg;
