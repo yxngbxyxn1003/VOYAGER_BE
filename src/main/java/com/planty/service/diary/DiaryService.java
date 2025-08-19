@@ -1,6 +1,7 @@
 package com.planty.service.diary;
 
 import com.planty.dto.diary.*;
+import com.planty.entity.crop.AnalysisType;
 import com.planty.entity.crop.Crop;
 import com.planty.entity.diary.Diary;
 import com.planty.entity.diary.DiaryImage;
@@ -9,6 +10,8 @@ import com.planty.repository.crop.CropRepository;
 import com.planty.repository.diary.DiaryRepository;
 import com.planty.repository.user.UserRepository;
 import com.planty.storage.StorageService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,7 +30,9 @@ public class DiaryService {
     private final DiaryRepository diaryRepository;
     private final UserRepository userRepository;
     private final CropRepository cropRepository;
+    @SuppressWarnings("unused")
     private final StorageService storageService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // 재배일지 작성
     public void saveDiary(Integer userId, DiaryFormDto dto, List<String> imageUrls) {
@@ -46,34 +51,32 @@ public class DiaryService {
         diary.setTitle(dto.getTitle());
         diary.setContent(dto.getContent());
         
-        // AI 분석 결과 선택적 포함
+        // AI 진단 결과 포함 처리
         if (dto.getIncludeAnalysis() != null && dto.getIncludeAnalysis()) {
-            // 사용자가 AI 분석 결과 포함을 선택한 경우
             if (dto.getAnalysis() != null && !dto.getAnalysis().trim().isEmpty()) {
-                // 직접 입력한 분석 결과가 있는 경우 우선 사용
+                // 직접 입력한 분석 결과 사용
                 diary.setAnalysis(dto.getAnalysis());
+            } else if (dto.getDiagnosisData() != null && !dto.getDiagnosisData().trim().isEmpty()) {
+                // 진단 결과 데이터 사용
+                diary.setAnalysis(formatDiagnosisAnalysis(dto.getDiagnosisType(), dto.getDiagnosisData()));
             } else {
-                // 직접 입력한 분석 결과가 없는 경우 작물의 AI 분석 결과 사용 (있다면)
+                // 작물의 기본 AI 분석 결과 사용
                 String cropAnalysis = buildCropAnalysisText(crop);
-                if (!cropAnalysis.isEmpty()) {
-                    diary.setAnalysis(cropAnalysis);
-                } else {
-                    diary.setAnalysis(null);
-                }
+                diary.setAnalysis(!cropAnalysis.isEmpty() ? cropAnalysis : null);
             }
         } else {
-            // 사용자가 AI 분석 결과 포함을 선택하지 않은 경우
             diary.setAnalysis(null);
         }
 
-        // 재배일지 이미지 삽입 및 썸네일 설정
-        if (imageUrls != null && !imageUrls.isEmpty()) {
-            List<DiaryImage> imgs = createDiaryImages(diary, imageUrls);
-            diary.setImages(imgs);
-        }
+        // 재배일지 저장 (이미지 저장 전)
+        Diary savedDiary = diaryRepository.save(diary);
 
-        // 재배일지 저장
-        diaryRepository.save(diary);
+        // 재배일지 이미지 저장 및 썸네일 설정 (최대 9개, 첫 번째가 썸네일)
+        if (imageUrls != null && !imageUrls.isEmpty()) {
+            List<DiaryImage> imgs = createDiaryImages(savedDiary, imageUrls);
+            savedDiary.setImages(imgs);
+            diaryRepository.save(savedDiary); // 이미지와 함께 재저장
+        }
     }
     
     // 작물의 AI 분석 결과를 텍스트로 변환
@@ -115,6 +118,12 @@ public class DiaryService {
         }
         
         return imgs;
+    }
+
+    // 재배일지 작성용 사용자 작물 목록 조회 (등록된 작물만)
+    public List<Crop> getUserCrops(Integer userId) {
+        User user = userRepository.getReferenceById(userId);
+        return cropRepository.findByUserAndIsRegisteredTrueOrderByCreatedAtDesc(user);
     }
 
     // 재배일지 상세 조회
@@ -225,7 +234,7 @@ public class DiaryService {
         if (diary.getImages() != null && !diary.getImages().isEmpty()) {
             for (DiaryImage image : diary.getImages()) {
                 try {
-                    // TODO 에러가 떠서 주석 처리 해놨어요!
+                    // TODO 에러가 떠서 주석 처리 
                     //  storageService.delete(image.getDiaryImg());
                 } catch (Exception e) {
                     // 파일 삭제 실패는 로그만 남기고 진행 (DB 삭제는 계속 진행)
@@ -238,15 +247,10 @@ public class DiaryService {
         diaryRepository.delete(diary);
     }
 
-    // 사용자의 작물 목록 조회 (재배일지 작성용) - 등록된 작물만 반환
-    public List<Crop> getUserCrops(Integer userId) {
-        User user = userRepository.getReferenceById(userId);
-        return user.getCrops().stream()
-                .filter(crop -> crop.getIsRegistered() != null && crop.getIsRegistered())
-                .toList();
-    }
+
 
     // 썸네일 이미지 URL 추출 유틸리티 메서드
+    @SuppressWarnings("unused")
     private String extractThumbnailImage(List<DiaryImage> images) {
         if (images == null || images.isEmpty()) {
             return null;
@@ -260,6 +264,7 @@ public class DiaryService {
     }
 
     // 이미지 목록에서 썸네일 보장 (첫 번째 이미지를 썸네일로 설정)
+    @SuppressWarnings("unused")
     private void ensureThumbnailExists(List<DiaryImage> images) {
         if (images == null || images.isEmpty()) {
             return;
@@ -271,6 +276,46 @@ public class DiaryService {
         if (!hasThumbnail) {
             // 썸네일이 없으면 첫 번째 이미지를 썸네일로 설정
             images.get(0).setThumbnail(true);
+        }
+    }
+
+    /**
+     * 진단 결과 데이터를 재배일지용 텍스트로 포맷팅
+     */
+    private String formatDiagnosisAnalysis(AnalysisType diagnosisType, String diagnosisData) {
+        try {
+            JsonNode resultNode = objectMapper.readTree(diagnosisData);
+            StringBuilder analysisText = new StringBuilder();
+
+            switch (diagnosisType) {
+                case CURRENT_STATUS:
+                    analysisText.append("# 현재 상태 분석\n\n");
+                    analysisText.append(resultNode.path("currentStatusSummary").asText("분석 결과 없음"));
+                    break;
+                    
+                case DISEASE_CHECK:
+                    analysisText.append("# 질병 진단 결과\n\n");
+                    analysisText.append("**질병 상태:** ").append(resultNode.path("diseaseStatus").asText("")).append("\n\n");
+                    analysisText.append("**상세 내용:** ").append(resultNode.path("diseaseDetails").asText("")).append("\n\n");
+                    analysisText.append("**예방 및 치료 방법:** ").append(resultNode.path("preventionMethods").asText("")).append("\n");
+                    break;
+                    
+                case QUALITY_MARKET:
+                    analysisText.append("# 품질 및 시장성 분석\n\n");
+                    analysisText.append("**상품 비율:** ").append(resultNode.path("marketRatio").asText("")).append("\n\n");
+                    analysisText.append("**색상 품질:** ").append(resultNode.path("colorUniformity").asText("")).append("\n\n");
+                    analysisText.append("**채도:** ").append(resultNode.path("saturation").asText("")).append("\n\n");
+                    analysisText.append("**명도:** ").append(resultNode.path("brightness").asText("")).append("\n\n");
+                    analysisText.append("**맛과 저장성:** ").append(resultNode.path("tasteStorage").asText("")).append("\n\n");
+                    analysisText.append("**운송 저항성:** ").append(resultNode.path("transportResistance").asText("")).append("\n\n");
+                    analysisText.append("**저장성 평가:** ").append(resultNode.path("storageEvaluation").asText("")).append("\n");
+                    break;
+            }
+
+            return analysisText.toString();
+            
+        } catch (Exception e) {
+            return "진단 결과 데이터를 처리하는 중 오류가 발생했습니다.";
         }
     }
 }

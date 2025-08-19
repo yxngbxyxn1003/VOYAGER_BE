@@ -32,14 +32,32 @@ logging:
     org.hibernate.orm.jdbc.extract: TRACE   # 결과 추출 로그
     org.hibernate.type: TRACE               # (보조) 타입 바인딩 로그
 
+# JWT 설정
 jwt:
   secret: "change-this-to-a-very-long-random-secret-at-least-256-bits"
   access-exp-millis: 86400000     # 1시간
 
-app:
-  upload-dir: uploads
-    
-# OpenAI API 설정
-openai:
-  api:
-    key: ${OPENAI_API_KEY}
+# 업로드 디렉토리 설정
+upload-dir: uploads
+
+# 파라미터 스토어 설정 (배포용)
+parameter-store:
+  enabled: ${PARAMETER_STORE_ENABLED:false}
+  region: ${AWS_REGION:us-east-1}
+  prefix: ${PARAMETER_PREFIX:/planty}
+
+# AI 모델 및 파라미터 설정
+ai:
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    timeout: 60
+    maxRetries: 3
+    enableLogging: false
+  crop-registration:
+    model: gpt-4o-mini
+    max-tokens: 1000
+    temperature: 0.1
+  crop-diagnosis:
+    model: gpt-4o
+    max-tokens: 1500
+    temperature: 0.2

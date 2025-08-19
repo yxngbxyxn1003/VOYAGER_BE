@@ -2,10 +2,11 @@ package com.planty.controller.diary;
 
 import com.planty.common.ApiSuccess;
 import com.planty.config.CustomUserDetails;
+
 import com.planty.dto.diary.*;
 import com.planty.entity.crop.Crop;
-import com.planty.entity.crop.AnalysisStatus;
-import com.planty.service.crop.CropService;
+
+
 import com.planty.service.diary.DiaryService;
 import com.planty.storage.StorageService;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 // 재배일지 컨트롤러
@@ -28,77 +27,76 @@ import java.util.Map;
 @RequestMapping("/api/diary")
 @RequiredArgsConstructor
 public class DiaryController {
+
+    private final DiaryService diaryService;
+    private final StorageService storageService;
 //
-//    private final DiaryService diaryService;
-//    private final StorageService storageService;
-//    private final CropService cropService;
+    // 재배일지 작성용 사용자 작물 목록 조회
+    @GetMapping("/crops")
+    public ResponseEntity<List<Crop>> getUserCrops(
+            @AuthenticationPrincipal CustomUserDetails me
+    ) {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 사용자 작물 목록 반환
+        return ResponseEntity.ok(diaryService.getUserCrops(me.getId()));
+    }
 //
-//    // 재배일지 작성용 사용자 작물 목록 조회
-//    @GetMapping("/crops")
-//    public ResponseEntity<List<Crop>> getUserCrops(
-//            @AuthenticationPrincipal CustomUserDetails me
-//    ) {
-//        // 권한이 없을 때
-//        if (me == null) return ResponseEntity.status(401).build();
+    // 재배일지 등록 (JSON+파일)
+    @PostMapping(value="/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createDiary(
+            @AuthenticationPrincipal CustomUserDetails me,
+            @RequestPart("form") @Validated DiaryFormDto form,  // 재배일지 데이터
+            @RequestPart(value = "images", required = false) List<MultipartFile> images // 재배일지 이미지
+    ) throws IOException {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 이미지 개수 검증 (최대 9개)
+        if (images != null && images.size() > 9) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiSuccess(400, "이미지는 최대 9개까지만 업로드할 수 있습니다."));
+        }
+
+        // 파일 저장 → URL 리스트 생성
+        List<String> urls = new ArrayList<>();
+        if (images != null) {
+            for (MultipartFile f : images) {
+                if (!f.isEmpty()) {
+                    urls.add(storageService.save(f, "diary"));
+                }
+            }
+        }
+
+        // 이미지 URL 개수 재검증 (빈 파일 제외 후)
+        if (urls.size() > 9) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiSuccess(400, "유효한 이미지는 최대 9개까지만 업로드할 수 있습니다."));
+        }
+
+        // 서비스 호출
+        diaryService.saveDiary(me.getId(), form, urls);
+
+        // 성공 응답
+        return ResponseEntity.status(201).body(new ApiSuccess(201, "재배일지가 성공적으로 작성되었습니다."));
+    }
 //
-//        // 사용자 작물 목록 반환
-//        return ResponseEntity.ok(diaryService.getUserCrops(me.getId()));
-//    }
-//
-//    // 재배일지 등록 (JSON+파일)
-//    @PostMapping(value="/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<?> createDiary(
-//            @AuthenticationPrincipal CustomUserDetails me,
-//            @RequestPart("form") @Validated DiaryFormDto form,  // 재배일지 데이터
-//            @RequestPart(value = "images", required = false) List<MultipartFile> images // 재배일지 이미지
-//    ) throws IOException {
-//        // 권한이 없을 때
-//        if (me == null) return ResponseEntity.status(401).build();
-//
-//        // 이미지 개수 검증 (최대 9개)
-//        if (images != null && images.size() > 9) {
-//            return ResponseEntity.badRequest()
-//                    .body(new ApiSuccess(400, "이미지는 최대 9개까지만 업로드할 수 있습니다."));
-//        }
-//
-//        // 파일 저장 → URL 리스트 생성
-//        List<String> urls = new ArrayList<>();
-//        if (images != null) {
-//            for (MultipartFile f : images) {
-//                if (!f.isEmpty()) {
-//                    urls.add(storageService.save(f, "diary"));
-//                }
-//            }
-//        }
-//
-//        // 이미지 URL 개수 재검증 (빈 파일 제외 후)
-//        if (urls.size() > 9) {
-//            return ResponseEntity.badRequest()
-//                    .body(new ApiSuccess(400, "유효한 이미지는 최대 9개까지만 업로드할 수 있습니다."));
-//        }
-//
-//        // 서비스 호출
-//        diaryService.saveDiary(me.getId(), form, urls);
-//
-//        // 성공 응답
-//        return ResponseEntity.status(201).body(new ApiSuccess(201, "재배일지가 성공적으로 작성되었습니다."));
-//    }
-//
-//    // 재배일지 상세 조회
-//    @GetMapping("/details/{id}")
-//    public ResponseEntity<DiaryDetailResDto> getDiaryDetail(
-//            @AuthenticationPrincipal CustomUserDetails me,
-//            @PathVariable Integer id
-//    ) {
-//        // 권한이 없을 때
-//        if (me == null) return ResponseEntity.status(401).build();
-//
-//        // 재배일지 데이터 가져오기
-//        DiaryDetailResDto dto = diaryService.getDiaryDetail(id, me.getId());
-//
-//        // 재배일지 데이터 반환
-//        return ResponseEntity.ok(dto);
-//    }
+    // 재배일지 상세 조회
+    @GetMapping("/details/{id}")
+    public ResponseEntity<DiaryDetailResDto> getDiaryDetail(
+            @AuthenticationPrincipal CustomUserDetails me,
+            @PathVariable Integer id
+    ) {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 재배일지 데이터 가져오기
+        DiaryDetailResDto dto = diaryService.getDiaryDetail(id, me.getId());
+
+        // 재배일지 데이터 반환
+        return ResponseEntity.ok(dto);
+    }
 //
 //    // 사용자별 재배일지 목록 조회
 //    @GetMapping("/user/{userId}")
@@ -115,19 +113,19 @@ public class DiaryController {
 //        return ResponseEntity.ok(diaries);
 //    }
 //
-//    // 내 재배일지 목록 조회
-//    @GetMapping("/my")
-//    public ResponseEntity<List<DiaryListDto>> getMyDiaries(
-//            @AuthenticationPrincipal CustomUserDetails me
-//    ) {
-//        // 권한이 없을 때
-//        if (me == null) return ResponseEntity.status(401).build();
-//
-//        // 내 재배일지 목록 가져오기
-//        List<DiaryListDto> diaries = diaryService.getUserDiaries(me.getId());
-//
-//        return ResponseEntity.ok(diaries);
-//    }
+    // 내 재배일지 목록 조회
+    @GetMapping("/my")
+    public ResponseEntity<List<DiaryListDto>> getMyDiaries(
+            @AuthenticationPrincipal CustomUserDetails me
+    ) {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 내 재배일지 목록 가져오기
+        List<DiaryListDto> diaries = diaryService.getUserDiaries(me.getId());
+
+        return ResponseEntity.ok(diaries);
+    }
 //
 //    // 작물별 재배일지 목록 조회
 //    @GetMapping("/crop/{cropId}")

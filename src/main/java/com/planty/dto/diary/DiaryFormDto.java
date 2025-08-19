@@ -1,5 +1,6 @@
 package com.planty.dto.diary;
 
+import com.planty.entity.crop.AnalysisType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -18,7 +19,23 @@ public class DiaryFormDto {
     @NotBlank(message = "내용을 입력해주세요.")
     private String content;
 
-    private String analysis; // AI 분석 결과 (옵션)
+    /**
+     * AI 분석 결과 (직접 입력한 경우)
+     */
+    private String analysis;
     
-    private Boolean includeAnalysis = false; // AI 분석 결과 포함 여부 (기본값: false)
+    /**
+     * AI 진단 결과 포함 여부 (기본값: false)
+     */
+    private Boolean includeAnalysis = false;
+
+    /**
+     * 포함할 진단 타입 (진단 결과를 포함하는 경우)
+     */
+    private AnalysisType diagnosisType;
+
+    /**
+     * 진단 결과 데이터 (JSON 형태로 저장)
+     */
+    private String diagnosisData;
 }
