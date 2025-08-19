@@ -55,14 +55,9 @@ public class UserController {
         }
 
         // 입력된 비번과 저장된 해시 비교
-        //TODO: 테스트 문제로 임시 변경
-        if (!loginFormDto.getPassword().equals(user.getPassword())) {
+        if (!passwordEncoder.matches(loginFormDto.getPassword(), user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS");
         }
-
-//        if (!passwordEncoder.matches(loginFormDto.getPassword(), user.getPassword())) {
-//            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS");
-//        }
 
         // JWT 발급
         String accessToken  = jwtProvider.createAccessToken(user.getUsername());
