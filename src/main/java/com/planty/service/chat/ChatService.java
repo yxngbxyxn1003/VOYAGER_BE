@@ -19,6 +19,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -119,6 +120,41 @@ public class ChatService {
                 content,
                 false,
                 null,
+                message.getCreatedAt(),
+                message.getModifiedAt()
+        );
+    }
+
+    @Transactional
+    public ChatMessageDto sendMessage(Long chatId, Integer senderId, String content, String file) {
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new RuntimeException("채팅이 없습니다."));
+        User sender = userRepository.findById(senderId)
+                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다." + senderId));
+
+        boolean isParticipant = chatUserRepository.existsByChatIdAndUserId(chatId, senderId);
+        if (!isParticipant) {
+            throw new RuntimeException("채팅 권한이 없는 유저입니다.");
+        }
+
+        ChatMessage message = new ChatMessage();
+        message.setChat(chat);
+        message.setSender(sender);
+        message.setContent(content);
+        message.setRead(false);
+        message.setChatImg(file);
+        message.setCreatedAt(LocalDateTime.now());
+        message.setModifiedAt(LocalDateTime.now());
+
+        chatMessageRepository.save(message);
+
+        return new ChatMessageDto(
+                message.getId(),
+                chatId,
+                senderId,
+                content,
+                false,
+                file,
                 message.getCreatedAt(),
                 message.getModifiedAt()
         );
