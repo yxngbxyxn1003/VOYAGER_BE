@@ -45,10 +45,10 @@ public class OpenAIService {
         try {
             // 이미지 파일을 Base64로 인코딩
             String base64Image = encodeImageToBase64(imagePath);
-            
+
             // OpenAI Vision API 호출
             String requestBody = createVisionApiRequestBody(base64Image);
-            
+
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://api.openai.com/v1/chat/completions"))
                     .header("Content-Type", "application/json")
@@ -57,14 +57,14 @@ public class OpenAIService {
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            
+
             if (response.statusCode() == 200) {
                 return parseVisionApiResponse(response.body());
             } else {
                 log.error("OpenAI API 호출 실패: {} - {}", response.statusCode(), response.body());
                 return new CropAnalysisResult(false, "이미지 분석에 실패했습니다.");
             }
-            
+
         } catch (Exception e) {
             log.error("이미지 분석 중 오류 발생", e);
             return new CropAnalysisResult(false, "이미지 분석 중 오류가 발생했습니다.");
@@ -107,14 +107,14 @@ public class OpenAIService {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
             JsonNode choices = root.get("choices");
-            
+
             if (choices != null && choices.size() > 0) {
                 String content = choices.get(0).get("message").get("content").asText();
-                
+
                 // JSON 응답에서 실제 JSON 부분만 추출
                 String jsonContent = extractJsonFromContent(content);
                 JsonNode analysisResult = objectMapper.readTree(jsonContent);
-                
+
                 CropAnalysisResult result = new CropAnalysisResult();
                 result.setSuccess(true);
                 result.setCropName(analysisResult.get("cropName").asText());
@@ -123,26 +123,26 @@ public class OpenAIService {
                 result.setHeight(analysisResult.get("height").asText());
                 result.setHowTo(analysisResult.get("howTo").asText());
                 result.setAnalysisMessage("이미지 분석이 완료되었습니다.");
-                
+
                 return result;
             }
-            
+
         } catch (Exception e) {
             log.error("OpenAI 응답 파싱 중 오류 발생", e);
         }
-        
+
         return new CropAnalysisResult(false, "응답 파싱에 실패했습니다.");
     }
-    
+
     private String extractJsonFromContent(String content) {
         // JSON 부분만 추출 (```json 태그나 다른 텍스트 제거)
         int startIndex = content.indexOf("{");
         int endIndex = content.lastIndexOf("}") + 1;
-        
+
         if (startIndex >= 0 && endIndex > startIndex) {
             return content.substring(startIndex, endIndex);
         }
-        
+
         return content;
     }
 
@@ -158,10 +158,10 @@ public class OpenAIService {
         try {
             // 이미지 파일을 Base64로 인코딩
             String base64Image = encodeImageToBase64(imagePath);
-            
+
             // 분석 타입별 요청 바디 생성
             String requestBody = createDetailAnalysisRequestBody(base64Image, analysisType);
-            
+
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("https://api.openai.com/v1/chat/completions"))
                     .header("Content-Type", "application/json")
@@ -170,7 +170,7 @@ public class OpenAIService {
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            
+
             if (response.statusCode() == 200) {
                 // return parseDetailAnalysisResponse(response.body(), analysisType);
                 return new CropDetailAnalysisResult();
@@ -178,7 +178,7 @@ public class OpenAIService {
                 log.error("OpenAI API 호출 실패: {} - {}", response.statusCode(), response.body());
                 return new CropDetailAnalysisResult(false, "이미지 분석에 실패했습니다.", analysisType);
             }
-            
+
         } catch (Exception e) {
             log.error("이미지 세부 분석 중 오류 발생", e);
             return new CropDetailAnalysisResult(false, "이미지 분석 중 오류가 발생했습니다.", analysisType);
@@ -190,7 +190,7 @@ public class OpenAIService {
      */
     private String createDetailAnalysisRequestBody(String base64Image, AnalysisType analysisType) {
         String prompt = getPromptByAnalysisType(analysisType);
-        
+
         return String.format("""
             {
                 "model": "gpt-4o-mini",
@@ -228,7 +228,7 @@ public class OpenAIService {
 //                "{\\n" +
 //                "  \\"currentStatusSummary\\": \\"현재 상태 종합 분석 내용\\"\\n" +
 //                "}";
-                
+
 //            case DISEASE_CHECK ->
 //                "이 작물 이미지를 분석하여 질병 여부를 진단해주세요. " +
 //                "병충해 감염 여부, 구체적인 질병명, 예방 및 치료 방법을 JSON 형태로 제공해주세요.\\n" +
@@ -238,7 +238,7 @@ public class OpenAIService {
 //                "  \\"diseaseDetails\\": \\"발견된 질병이나 문제점 상세 설명\\",\\n" +
 //                "  \\"preventionMethods\\": \\"예방 및 치료 방법\\"\\n" +
 //                "}";
-                
+
 //            case QUALITY_MARKET ->
 //                "이 작물 이미지를 분석하여 품질과 시장성을 평가해주세요. " +
 //                "출하시 상품 비율, 색상 품질, 맛과 저장성, 운송 저항성 등을 JSON 형태로 제공해주세요.\\n" +

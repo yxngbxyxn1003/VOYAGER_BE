@@ -27,7 +27,8 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false)
+    //TODO: 테스트 오류로 인한 수정
+    @Column(nullable = false, name = "user_id")
     private String userId;
 
     @Column(nullable = false)
