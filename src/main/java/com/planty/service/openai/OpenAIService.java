@@ -1,10 +1,13 @@
 package com.planty.service.openai;
 
+import com.planty.config.OpenApiConfig;
+import com.planty.config.ParameterStoreConfig;
 import com.planty.dto.crop.CropAnalysisResult;
 import com.planty.dto.crop.CropDetailAnalysisResult;
 import com.planty.entity.crop.AnalysisType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -16,27 +19,61 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.Base64;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class OpenAIService {
 
+    private final OpenApiConfig openApiConfig;
+    private final ParameterStoreConfig parameterStoreConfig;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    
     @Value("${openai.api.key:}")
-    private String apiKey;
+    private String fallbackApiKey;
 
-    private final HttpClient httpClient;
-    private final ObjectMapper objectMapper;
+    private HttpClient httpClient;
 
-    public OpenAIService() {
-        this.httpClient = HttpClient.newHttpClient();
-        this.objectMapper = new ObjectMapper();
+    /**
+     * 지연 초기화를 통한 HttpClient 생성
+     */
+    private HttpClient getHttpClient() {
+        if (httpClient == null) {
+            int timeout = openApiConfig.getOpenai().getTimeout();
+            httpClient = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(timeout))
+                    .build();
+        }
+        return httpClient;
     }
 
     /**
-     * 작물 이미지를 분석하여 작물 정보를 반환
+     * API 키 조회 (Parameter Store > 환경변수 > 설정파일 순서)
+     */
+    private String getApiKey() {
+        // 1. Parameter Store에서 조회
+        String apiKey = parameterStoreConfig.getOpenAIApiKey();
+        
+        // 2. 환경변수 폴백
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            apiKey = System.getenv("OPENAI_API_KEY");
+        }
+        
+        // 3. 설정파일 폴백
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            apiKey = fallbackApiKey;
+        }
+        
+        return apiKey;
+    }
+
+    /**
+     * 작물 이미지를 분석하여 작물 정보를 반환 (작물 등록용)
      */
     public CropAnalysisResult analyzeCropImage(String imagePath) {
+        String apiKey = getApiKey();
         if (apiKey == null || apiKey.trim().isEmpty()) {
             log.error("OpenAI API key가 설정되지 않았습니다.");
             return new CropAnalysisResult(false, "API 키가 설정되지 않았습니다.");
@@ -46,20 +83,21 @@ public class OpenAIService {
             // 이미지 파일을 Base64로 인코딩
             String base64Image = encodeImageToBase64(imagePath);
 
-            // OpenAI Vision API 호출
-            String requestBody = createVisionApiRequestBody(base64Image);
+            // 작물 등록용 요청 바디 생성
+            String requestBody = createCropRegistrationRequestBody(base64Image);
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.openai.com/v1/chat/completions"))
+                    .uri(URI.create(openApiConfig.getOpenai().getBaseUrl() + "/chat/completions"))
                     .header("Content-Type", "application/json")
                     .header("Authorization", "Bearer " + apiKey)
+                    .timeout(Duration.ofSeconds(openApiConfig.getOpenai().getTimeout()))
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = getHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                return parseVisionApiResponse(response.body());
+                return parseCropAnalysisResponse(response.body());
             } else {
                 log.error("OpenAI API 호출 실패: {} - {}", response.statusCode(), response.body());
                 return new CropAnalysisResult(false, "이미지 분석에 실패했습니다.");
@@ -77,17 +115,26 @@ public class OpenAIService {
         return Base64.getEncoder().encodeToString(imageBytes);
     }
 
-    private String createVisionApiRequestBody(String base64Image) {
+    /**
+     * 작물 등록용 요청 바디 생성
+     */
+    private String createCropRegistrationRequestBody(String base64Image) {
+        OpenApiConfig.CropRegistration config = openApiConfig.getCropRegistration();
+        
         return String.format("""
             {
-                "model": "gpt-4o-mini",
+                "model": "%s",
                 "messages": [
+                    {
+                        "role": "system",
+                        "content": "%s"
+                    },
                     {
                         "role": "user",
                         "content": [
                             {
                                 "type": "text",
-                                "text": "이 이미지의 작물을 분석해주세요. 다음 정보를 JSON 형태로 제공해주세요:\\n1. 작물 이름 (cropName)\\n2. 재배 환경 (environment)\\n3. 적정 온도 (temperature)\\n4. 예상 높이 (height)\\n5. 키우는 방법 (howTo)\\n\\n응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:\\n{\\n  \\"cropName\\": \\"작물이름\\",\\n  \\"environment\\": \\"재배환경\\",\\n  \\"temperature\\": \\"적정온도\\",\\n  \\"height\\": \\"예상높이\\",\\n  \\"howTo\\": \\"상세한 키우는 방법\\"\\n}"
+                                "text": "%s"
                             },
                             {
                                 "type": "image_url",
@@ -98,12 +145,23 @@ public class OpenAIService {
                         ]
                     }
                 ],
-                "max_tokens": 1000
+                "max_tokens": %d,
+                "temperature": %.1f
             }
-            """, base64Image);
+            """, 
+            config.getModel(),
+            config.getSystemPrompt(),
+            config.getUserPromptTemplate(),
+            base64Image,
+            config.getMaxTokens(),
+            config.getTemperature()
+        );
     }
 
-    private CropAnalysisResult parseVisionApiResponse(String responseBody) {
+    /**
+     * 작물 분석 응답 파싱
+     */
+    private CropAnalysisResult parseCropAnalysisResponse(String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
             JsonNode choices = root.get("choices");
@@ -117,12 +175,17 @@ public class OpenAIService {
 
                 CropAnalysisResult result = new CropAnalysisResult();
                 result.setSuccess(true);
-                result.setCropName(analysisResult.get("cropName").asText());
-                result.setEnvironment(analysisResult.get("environment").asText());
-                result.setTemperature(analysisResult.get("temperature").asText());
-                result.setHeight(analysisResult.get("height").asText());
-                result.setHowTo(analysisResult.get("howTo").asText());
-                result.setAnalysisMessage("이미지 분석이 완료되었습니다.");
+                result.setCropName(getSafeText(analysisResult, "cropName"));
+                result.setEnvironment(getSafeText(analysisResult, "environment"));
+                result.setTemperature(getSafeText(analysisResult, "temperature"));
+                result.setHeight(getSafeText(analysisResult, "height"));
+                result.setHowTo(getSafeText(analysisResult, "howTo"));
+                result.setAnalysisMessage("작물 이미지 분석이 완료되었습니다.");
+
+                // 로깅 (디버그용)
+                if (openApiConfig.getOpenai().isEnableLogging()) {
+                    log.info("작물 분석 결과: {}", result);
+                }
 
                 return result;
             }
@@ -132,6 +195,14 @@ public class OpenAIService {
         }
 
         return new CropAnalysisResult(false, "응답 파싱에 실패했습니다.");
+    }
+
+    /**
+     * JSON 노드에서 안전하게 텍스트 추출
+     */
+    private String getSafeText(JsonNode node, String fieldName) {
+        JsonNode fieldNode = node.get(fieldName);
+        return fieldNode != null ? fieldNode.asText() : "정보 없음";
     }
 
     private String extractJsonFromContent(String content) {
@@ -150,6 +221,7 @@ public class OpenAIService {
      * 작물 세부 분석 (현재상태, 질병여부, 품질/시장성)
      */
     public CropDetailAnalysisResult analyzeCropDetail(String imagePath, AnalysisType analysisType) {
+        String apiKey = getApiKey();
         if (apiKey == null || apiKey.trim().isEmpty()) {
             log.error("OpenAI API key가 설정되지 않았습니다.");
             return new CropDetailAnalysisResult(false, "API 키가 설정되지 않았습니다.", analysisType);
@@ -160,20 +232,20 @@ public class OpenAIService {
             String base64Image = encodeImageToBase64(imagePath);
 
             // 분석 타입별 요청 바디 생성
-            String requestBody = createDetailAnalysisRequestBody(base64Image, analysisType);
+            String requestBody = createDiagnosisRequestBody(base64Image, analysisType);
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.openai.com/v1/chat/completions"))
+                    .uri(URI.create(openApiConfig.getOpenai().getBaseUrl() + "/chat/completions"))
                     .header("Content-Type", "application/json")
                     .header("Authorization", "Bearer " + apiKey)
+                    .timeout(Duration.ofSeconds(openApiConfig.getOpenai().getTimeout()))
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = getHttpClient().send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                // return parseDetailAnalysisResponse(response.body(), analysisType);
-                return new CropDetailAnalysisResult();
+                return parseDiagnosisResponse(response.body(), analysisType);
             } else {
                 log.error("OpenAI API 호출 실패: {} - {}", response.statusCode(), response.body());
                 return new CropDetailAnalysisResult(false, "이미지 분석에 실패했습니다.", analysisType);
@@ -186,15 +258,20 @@ public class OpenAIService {
     }
 
     /**
-     * 분석 타입별 요청 바디 생성
+     * 진단용 요청 바디 생성
      */
-    private String createDetailAnalysisRequestBody(String base64Image, AnalysisType analysisType) {
+    private String createDiagnosisRequestBody(String base64Image, AnalysisType analysisType) {
+        OpenApiConfig.CropDiagnosis config = openApiConfig.getCropDiagnosis();
         String prompt = getPromptByAnalysisType(analysisType);
 
         return String.format("""
             {
-                "model": "gpt-4o-mini",
+                "model": "%s",
                 "messages": [
+                    {
+                        "role": "system",
+                        "content": "당신은 농업 전문가입니다. 작물 이미지를 정확히 분석하여 요청된 진단 정보를 JSON 형식으로 제공해주세요."
+                    },
                     {
                         "role": "user",
                         "content": [
@@ -211,99 +288,85 @@ public class OpenAIService {
                         ]
                     }
                 ],
-                "max_tokens": 1500
+                "max_tokens": %d,
+                "temperature": %.1f
             }
-            """, prompt, base64Image);
+            """, 
+            config.getModel(),
+            prompt,
+            base64Image,
+            config.getMaxTokens(),
+            config.getTemperature()
+        );
     }
 
     /**
      * 분석 타입별 프롬프트 반환
      */
     private String getPromptByAnalysisType(AnalysisType analysisType) {
-//        return switch (analysisType) {
-//            case CURRENT_STATUS ->
-//                "이 작물 이미지를 분석하여 현재 상태를 종합적으로 평가해주세요. " +
-//                "전체적인 성장 상태, 건강도, 발달 정도 등을 포괄적으로 요약하여 JSON 형태로 제공해주세요.\\n" +
-//                "응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:\\n" +
-//                "{\\n" +
-//                "  \\"currentStatusSummary\\": \\"현재 상태 종합 분석 내용\\"\\n" +
-//                "}";
-
-//            case DISEASE_CHECK ->
-//                "이 작물 이미지를 분석하여 질병 여부를 진단해주세요. " +
-//                "병충해 감염 여부, 구체적인 질병명, 예방 및 치료 방법을 JSON 형태로 제공해주세요.\\n" +
-//                "응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:\\n" +
-//                "{\\n" +
-//                "  \\"diseaseStatus\\": \\"질병 상태 (건강함/경미한 질병/심각한 질병 등)\\",\\n" +
-//                "  \\"diseaseDetails\\": \\"발견된 질병이나 문제점 상세 설명\\",\\n" +
-//                "  \\"preventionMethods\\": \\"예방 및 치료 방법\\"\\n" +
-//                "}";
-
-//            case QUALITY_MARKET ->
-//                "이 작물 이미지를 분석하여 품질과 시장성을 평가해주세요. " +
-//                "출하시 상품 비율, 색상 품질, 맛과 저장성, 운송 저항성 등을 JSON 형태로 제공해주세요.\\n" +
-//                "응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:\\n" +
-//                "{\\n" +
-//                "  \\"marketRatio\\": \\"출하시 상품 비율 평가\\",\\n" +
-//                "  \\"colorUniformity\\": \\"색 균일도 평가\\",\\n" +
-//                "  \\"saturation\\": \\"채도 평가\\",\\n" +
-//                "  \\"brightness\\": \\"명도 평가\\",\\n" +
-//                "  \\"tasteStorage\\": \\"맛과 저장성 평가\\",\\n" +
-//                "  \\"transportResistance\\": \\"운송 저장 중 손상 저항성 평가\\",\\n" +
-//                "  \\"storageEvaluation\\": \\"저장성 종합 평가\\"\\n" +
-//                "}";
-        return analysisType.name().toLowerCase();
+        OpenApiConfig.CropDiagnosis config = openApiConfig.getCropDiagnosis();
+        
+        return switch (analysisType) {
+            case CURRENT_STATUS -> config.getCurrentStatusPrompt();
+            case DISEASE_CHECK -> config.getDiseaseCheckPrompt();
+            case QUALITY_MARKET -> config.getQualityMarketPrompt();
         };
     }
 
     /**
-     * 세부 분석 응답 파싱
+     * 진단 응답 파싱
      */
-//    private CropDetailAnalysisResult parseDetailAnalysisResponse(String responseBody, AnalysisType analysisType) {
-//        try {
-//            JsonNode root = objectMapper.readTree(responseBody);
-//            JsonNode choices = root.get("choices");
-//
-//            if (choices != null && choices.size() > 0) {
-//                String content = choices.get(0).get("message").get("content").asText();
-//
-//                // JSON 응답에서 실제 JSON 부분만 추출
-//                String jsonContent = extractJsonFromContent(content);
-//                JsonNode analysisResult = objectMapper.readTree(jsonContent);
-//
-//                CropDetailAnalysisResult result = new CropDetailAnalysisResult();
-//                result.setSuccess(true);
-//                result.setAnalysisType(analysisType);
-//                result.setMessage("분석이 완료되었습니다.");
-//
-//                // 분석 타입별로 결과 매핑
-//                switch (analysisType) {
-//                    case CURRENT_STATUS -> {
-//                        result.setCurrentStatusSummary(analysisResult.get("currentStatusSummary").asText());
-//                    }
-//                    case DISEASE_CHECK -> {
-//                        result.setDiseaseStatus(analysisResult.get("diseaseStatus").asText());
-//                        result.setDiseaseDetails(analysisResult.get("diseaseDetails").asText());
-//                        result.setPreventionMethods(analysisResult.get("preventionMethods").asText());
-//                    }
-//                    case QUALITY_MARKET -> {
-//                        result.setMarketRatio(analysisResult.get("marketRatio").asText());
-//                        result.setColorUniformity(analysisResult.get("colorUniformity").asText());
-//                        result.setSaturation(analysisResult.get("saturation").asText());
-//                        result.setBrightness(analysisResult.get("brightness").asText());
-//                        result.setTasteStorage(analysisResult.get("tasteStorage").asText());
-//                        result.setTransportResistance(analysisResult.get("transportResistance").asText());
-//                        result.setStorageEvaluation(analysisResult.get("storageEvaluation").asText());
-//                    }
-//                }
-//
-//                return result;
-//            }
-//
-//        } catch (Exception e) {
-//            log.error("OpenAI 세부 분석 응답 파싱 중 오류 발생", e);
-//        }
-//
-//        return new CropDetailAnalysisResult(false, "응답 파싱에 실패했습니다.", analysisType);
-//    }
-// }
+    private CropDetailAnalysisResult parseDiagnosisResponse(String responseBody, AnalysisType analysisType) {
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode choices = root.get("choices");
+
+            if (choices != null && choices.size() > 0) {
+                String content = choices.get(0).get("message").get("content").asText();
+
+                // JSON 응답에서 실제 JSON 부분만 추출
+                String jsonContent = extractJsonFromContent(content);
+                JsonNode analysisResult = objectMapper.readTree(jsonContent);
+
+                CropDetailAnalysisResult result = new CropDetailAnalysisResult();
+                result.setSuccess(true);
+                result.setAnalysisType(analysisType);
+                result.setMessage("분석이 완료되었습니다.");
+
+                // 분석 타입별로 결과 매핑
+                switch (analysisType) {
+                    case CURRENT_STATUS -> {
+                        result.setCurrentStatusSummary(getSafeText(analysisResult, "currentStatusSummary"));
+                    }
+                    case DISEASE_CHECK -> {
+                        result.setDiseaseStatus(getSafeText(analysisResult, "diseaseStatus"));
+                        result.setDiseaseDetails(getSafeText(analysisResult, "diseaseDetails"));
+                        result.setPreventionMethods(getSafeText(analysisResult, "preventionMethods"));
+                    }
+                    case QUALITY_MARKET -> {
+                        result.setMarketRatio(getSafeText(analysisResult, "marketRatio"));
+                        result.setColorUniformity(getSafeText(analysisResult, "colorUniformity"));
+                        result.setSaturation(getSafeText(analysisResult, "saturation"));
+                        result.setBrightness(getSafeText(analysisResult, "brightness"));
+                        result.setTasteStorage(getSafeText(analysisResult, "tasteStorage"));
+                        result.setTransportResistance(getSafeText(analysisResult, "transportResistance"));
+                        result.setStorageEvaluation(getSafeText(analysisResult, "storageEvaluation"));
+                    }
+                }
+
+                // 로깅 (디버그용)
+                if (openApiConfig.getOpenai().isEnableLogging()) {
+                    log.info("작물 진단 결과 - 타입: {}, 결과: {}", analysisType, result);
+                }
+
+                return result;
+            }
+
+        } catch (Exception e) {
+            log.error("OpenAI 진단 응답 파싱 중 오류 발생", e);
+        }
+
+        return new CropDetailAnalysisResult(false, "응답 파싱에 실패했습니다.", analysisType);
+    }
+
+}
