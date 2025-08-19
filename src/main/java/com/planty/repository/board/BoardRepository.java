@@ -49,4 +49,15 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
     """)
     List<Board> findMyBoardsOrderByStatusAndCreated(@Param("userId") Integer userId);
 
+    //ai 챗봇: 카테고리 분류 불러오기
+    @Query("""
+    SELECT b FROM Board b
+    JOIN b.crop c
+    JOIN c.categories cc
+    WHERE cc.categoryName = :categoryName
+    AND b.sell = true
+    ORDER BY b.createdAt DESC
+""")
+    List<Board> findByCropCategoryName(@Param("categoryName") String categoryName);
+
 }

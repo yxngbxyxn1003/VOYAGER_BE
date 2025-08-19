@@ -1,10 +1,14 @@
 package com.planty.service.board;
 
+import com.planty.dto.board.AiMessageResDto;
+import com.planty.dto.board.AiMessageWithBoardsDto;
 import com.planty.entity.board.AiChat;
 import com.planty.entity.board.AiMessage;
+import com.planty.entity.board.Board;
 import com.planty.entity.user.User;
 import com.planty.repository.board.AiChatRepository;
 import com.planty.repository.board.AiMessageRepository;
+import com.planty.repository.board.BoardRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +27,7 @@ public class AiChatService {
 
     private final AiChatRepository aiChatRepository;
     private final AiMessageRepository aiMessageRepository;
+    private final BoardRepository boardRepository;
 
     // WebClient 초기화
     private final WebClient webClient;
@@ -64,6 +69,33 @@ public class AiChatService {
                 .build();
 
         return aiMessageRepository.save(aiMessage);
+    }
+
+    // AI 응답 생성 with 판매게시글 추천 (GPT-4.1 호출)
+    public AiMessageWithBoardsDto generateAiResponseWithBoards(AiChat chat, String userMessage) {
+        String aiReply = callOpenAi(userMessage); // WebClient로 GPT-4.1 호출
+
+        AiMessage aiMessage = AiMessage.builder()
+                .aiChat(chat)
+                .content(aiReply)
+                .sender("ai")
+                .createdAt(LocalDateTime.now())
+                .modifiedAt(LocalDateTime.now())
+                .build();
+
+        aiMessageRepository.save(aiMessage);
+
+        List<Board> recommendedBoards = boardRepository.findByCropCategoryName(userMessage)
+                .stream()
+                .limit(5) // 최대 5개
+                .toList();
+
+        AiMessageWithBoardsDto aiMessageWithBoardsDto = new AiMessageWithBoardsDto();
+        aiMessageWithBoardsDto.setId(aiMessage.getId());
+        aiMessageWithBoardsDto.setContent(aiMessage.getContent());
+        aiMessageWithBoardsDto.setRecommendedBoards(recommendedBoards);
+
+        return aiMessageWithBoardsDto;
     }
 
     public AiChat getChat(Long chatId) {

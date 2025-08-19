@@ -2,6 +2,7 @@ package com.planty.controller.board;
 
 import com.planty.dto.board.AiChatResDto;
 import com.planty.dto.board.AiMessageResDto;
+import com.planty.dto.board.AiMessageWithBoardsDto;
 import com.planty.entity.board.AiChat;
 import com.planty.entity.board.AiMessage;
 import com.planty.entity.user.User;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,15 +43,31 @@ public class AiChatController {
     ) {
         AiChat chat = aiChatService.getChat(chatId);
         AiMessage userMsg = aiChatService.saveUserMessage(chat, content);
-        AiMessage aiMsg = aiChatService.generateAiResponse(chat, content);
 
+//        AiMessage aiMsg = null;
+//        AiMessageWithBoardsDto aiMsgWithB = null;
         Map<String, Object> response = new HashMap<>();
-        response.put("userMessage", new AiMessageResDto(
-                userMsg.getId(), userMsg.getContent(), userMsg.getSender(), userMsg.getCreatedAt(), userMsg.getAiImage()
-        ));
-        response.put("aiMessage", new AiMessageResDto(
-                aiMsg.getId(), aiMsg.getContent(), aiMsg.getSender(), aiMsg.getCreatedAt(), aiMsg.getAiImage()
-        ));
+        if (content.contains("구매")){
+            AiMessageWithBoardsDto aiMsgWithB = aiChatService.generateAiResponseWithBoards(chat, content);
+            response.put("aiMessage", new AiMessageResDto(
+                    aiMsgWithB.getId(), aiMsgWithB.getContent(), "ai", LocalDateTime.now(), null
+            ));
+            response.put("recommendedBoards", aiMsgWithB.getRecommendedBoards());
+        }else{
+            AiMessage aiMsg = aiChatService.generateAiResponse(chat, content);
+            response.put("aiMessage", new AiMessageResDto(
+                    aiMsg.getId(), aiMsg.getContent(), aiMsg.getSender(), aiMsg.getCreatedAt(), aiMsg.getAiImage()
+            ));
+        }
+
+
+
+//        response.put("userMessage", new AiMessageResDto(
+//                userMsg.getId(), userMsg.getContent(), userMsg.getSender(), userMsg.getCreatedAt(), userMsg.getAiImage()
+//        ));
+//        response.put("aiMessage", new AiMessageResDto(
+//                aiMsg.getId(), aiMsg.getContent(), aiMsg.getSender(), aiMsg.getCreatedAt(), aiMsg.getAiImage()
+//        ));
 
         return ResponseEntity.ok(response);
     }
