@@ -4,6 +4,7 @@ import com.planty.common.ApiError;
 import org.apache.commons.fileupload.FileUploadBase;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 
@@ -127,6 +128,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleEtc(Exception ex) {
         return ApiError.of(500, "INTERNAL_ERROR", "서버 에러가 발생했습니다.");
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 }
 

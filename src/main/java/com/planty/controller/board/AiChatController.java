@@ -9,6 +9,7 @@ import com.planty.repository.user.UserRepository;
 import com.planty.service.board.AiChatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -24,8 +25,8 @@ public class AiChatController {
     private final UserRepository userRepository;
 
     // 새로운 채팅 시작
-    @PostMapping("/start/{userId}")
-    public ResponseEntity<AiChat> startChat(@PathVariable Long userId) {
+    @PostMapping("/start")
+    public ResponseEntity<AiChat> startChat(@AuthenticationPrincipal Long userId) {
         User user = userRepository.findById(Math.toIntExact(userId))
                 .orElseThrow(() -> new RuntimeException("유저 없음"));
         AiChat chat = aiChatService.createChat(user);
@@ -33,32 +34,6 @@ public class AiChatController {
     }
 
     // 메시지 전송 + AI 응답 반환
-//    @PostMapping("/{chatId}/send")
-//    public ResponseEntity<Map<String, Object>> sendMessage(
-//            @PathVariable Long chatId,
-//            @RequestParam String content
-//    ) {
-//        System.out.println("sendMessage 호출됨 → chatId=" + chatId + ", content=" + content);
-//        System.out.println("ChatId: " + chatId);
-//        System.out.println("Received content: " + content);
-//        AiChat chat = aiChatService.getChat(chatId);
-//        AiMessage userMsg = aiChatService.saveUserMessage(chat, content);
-//        AiMessage aiMsg;
-//        try {
-//            aiMsg = aiChatService.generateAiResponse(chat, content);
-//            System.out.println("AI Response: " + aiMsg.getContent());
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            aiMsg = null;
-//        }
-//
-//        Map<String, Object> response = new HashMap<>();
-//        response.put("userMessage", userMsg);
-//        response.put("aiMessage", aiMsg);
-//
-//        return ResponseEntity.ok(response);
-//    }
-
     @PostMapping("/{chatId}/send")
     public ResponseEntity<Map<String, Object>> sendMessage(
             @PathVariable Long chatId,
