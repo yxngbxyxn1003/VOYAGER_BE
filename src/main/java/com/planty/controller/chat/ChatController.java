@@ -10,9 +10,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.attribute.UserPrincipal;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/chat")
@@ -70,6 +74,28 @@ public class ChatController {
     public ResponseEntity<Void> readChat(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long chatId) {
         chatService.readChat(chatId, user.getId());
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{chatId}/message")
+    public ResponseEntity<ChatMessageDto> sendMessage(
+            @PathVariable Long chatId,
+            @RequestParam(required = false) String content,
+            @RequestParam(required = false) MultipartFile file,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) throws IOException {
+
+        String filePath = null;
+
+        if (file != null && !file.isEmpty()) {
+            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            // EC2 서버 내 특정 폴더에 저장
+            File dest = new File("/home/ubuntu/uploads/" + fileName);
+            file.transferTo(dest);
+            filePath = "/uploads/" + fileName; // 프론트에서 접근할 URL
+        }
+
+        ChatMessageDto message = chatService.sendMessage(chatId, user.getId(), content, filePath);
+        return ResponseEntity.ok(message);
     }
 }
 
