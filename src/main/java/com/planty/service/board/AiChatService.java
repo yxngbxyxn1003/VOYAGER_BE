@@ -58,7 +58,7 @@ public class AiChatService {
 
     // AI 응답 생성 (GPT-4.1 호출)
     public AiMessage generateAiResponse(AiChat chat, String userMessage) {
-        String aiReply = callOpenAi(userMessage); // WebClient로 GPT-4.1 호출
+        String aiReply = callOpenAi(userMessage); // GPT-4.1 호출
 
         AiMessage aiMessage = AiMessage.builder()
                 .aiChat(chat)
@@ -71,32 +71,14 @@ public class AiChatService {
         return aiMessageRepository.save(aiMessage);
     }
 
-    // AI 응답 생성 with 판매게시글 추천 (GPT-4.1 호출)
-    public AiMessageWithBoardsDto generateAiResponseWithBoards(AiChat chat, String userMessage) {
-        String aiReply = callOpenAi(userMessage); // WebClient로 GPT-4.1 호출
-
-        AiMessage aiMessage = AiMessage.builder()
-                .aiChat(chat)
-                .content(aiReply)
-                .sender("ai")
-                .createdAt(LocalDateTime.now())
-                .modifiedAt(LocalDateTime.now())
-                .build();
-
-        aiMessageRepository.save(aiMessage);
-
-        List<Board> recommendedBoards = boardRepository.findByCropCategoryName(userMessage)
+    // 판매게시글 추천만 가져오기
+    public List<Board> getRecommendedBoards(String keyword) {
+        return boardRepository.findByCropCategoryName(keyword)
                 .stream()
                 .limit(5) // 최대 5개
                 .toList();
-
-        AiMessageWithBoardsDto aiMessageWithBoardsDto = new AiMessageWithBoardsDto();
-        aiMessageWithBoardsDto.setId(aiMessage.getId());
-        aiMessageWithBoardsDto.setContent(aiMessage.getContent());
-        aiMessageWithBoardsDto.setRecommendedBoards(recommendedBoards);
-
-        return aiMessageWithBoardsDto;
     }
+
 
     public AiChat getChat(Long chatId) {
         return aiChatRepository.findById(chatId)
