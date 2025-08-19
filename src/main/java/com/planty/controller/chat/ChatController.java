@@ -54,13 +54,13 @@ public class ChatController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<List<ChatRoomDto>> getChat(@AuthenticationPrincipal Integer userId) {
-        return ResponseEntity.ok(chatService.getMyChatRooms(userId));
+    public ResponseEntity<List<ChatRoomDto>> getChat(@AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.ok(chatService.getMyChatRooms(user.getId()));
     }
 
     @DeleteMapping("/delete/{chatId}")
-    public ResponseEntity<Void> deleteChatRoom(@PathVariable Long chatId, @AuthenticationPrincipal Integer userId) {
-        chatService.deleteChatRoom(chatId, userId);
+    public ResponseEntity<Void> deleteChatRoom(@PathVariable Long chatId, @AuthenticationPrincipal CustomUserDetails user) {
+        chatService.deleteChatRoom(chatId, user.getId());
         return ResponseEntity.ok().build();
     }
 
