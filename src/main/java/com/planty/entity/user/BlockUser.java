@@ -1,5 +1,6 @@
 package com.planty.entity.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -21,10 +22,12 @@ public class BlockUser {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true, nullable = false)
+    @JsonIgnore
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "block_id", unique = true, nullable = false) // FK
+    @JsonIgnore
     private User blocked;
 
     @CreationTimestamp
