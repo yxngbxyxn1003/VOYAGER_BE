@@ -220,6 +220,94 @@ public class DiaryService {
                 .toList();
     }
 
+    // 재배일지 수정
+    public void updateDiary(Integer diaryId, Integer userId, DiaryUpdateDto dto, List<String> newImageUrls) {
+        Diary diary = diaryRepository.findById(diaryId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "재배일지를 찾을 수 없습니다."));
+
+        // 권한 확인 (본인의 재배일지만 수정 가능)
+        if (!diary.getUser().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "수정 권한이 없습니다.");
+        }
+
+        // 기본 정보 수정
+        diary.setTitle(dto.getTitle());
+        diary.setContent(dto.getContent());
+
+        // AI 분석 결과 수정
+        if (dto.getIncludeAnalysis() != null && dto.getIncludeAnalysis()) {
+            if (dto.getAnalysis() != null && !dto.getAnalysis().trim().isEmpty()) {
+                // 직접 입력한 분석 결과 사용
+                diary.setAnalysis(dto.getAnalysis());
+            } else if (dto.getDiagnosisData() != null && !dto.getDiagnosisData().trim().isEmpty()) {
+                // 진단 결과 데이터 사용
+                diary.setAnalysis(formatDiagnosisAnalysis(AnalysisType.valueOf(dto.getDiagnosisType()), dto.getDiagnosisData()));
+            } else {
+                // 작물의 기본 AI 분석 결과 사용
+                String cropAnalysis = buildCropAnalysisText(diary.getCrop());
+                diary.setAnalysis(!cropAnalysis.isEmpty() ? cropAnalysis : null);
+            }
+        } else {
+            diary.setAnalysis(null);
+        }
+
+        // 이미지 수정 처리
+        updateDiaryImages(diary, dto, newImageUrls);
+
+        // 재배일지 저장
+        diaryRepository.save(diary);
+    }
+
+    // 재배일지 이미지 수정 처리
+    private void updateDiaryImages(Diary diary, DiaryUpdateDto dto, List<String> newImageUrls) {
+        List<DiaryImage> currentImages = diary.getImages();
+        
+        // 삭제할 이미지 처리
+        if (dto.getImagesToDelete() != null && !dto.getImagesToDelete().isEmpty()) {
+            currentImages.removeIf(image -> {
+                if (dto.getImagesToDelete().contains(image.getDiaryImg())) {
+                    // 파일 시스템에서 이미지 삭제 시도
+                    try {
+                        // TODO: StorageService 삭제 기능 구현 후 활성화
+                        // storageService.delete(image.getDiaryImg());
+                    } catch (Exception e) {
+                        System.err.println("이미지 파일 삭제 실패: " + image.getDiaryImg() + " - " + e.getMessage());
+                    }
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        // 새 이미지 추가
+        if (newImageUrls != null && !newImageUrls.isEmpty()) {
+            for (String imageUrl : newImageUrls) {
+                if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                    DiaryImage newImage = new DiaryImage();
+                    newImage.setDiary(diary);
+                    newImage.setDiaryImg(imageUrl);
+                    newImage.setThumbnail(false); // 새 이미지는 일단 썸네일이 아님
+                    currentImages.add(newImage);
+                }
+            }
+        }
+
+        // 전체 이미지 개수 검증 (최대 9개)
+        if (currentImages.size() > 9) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지는 최대 9개까지만 업로드할 수 있습니다.");
+        }
+
+        // 썸네일 설정 보장
+        if (!currentImages.isEmpty()) {
+            boolean hasThumbnail = currentImages.stream().anyMatch(DiaryImage::getThumbnail);
+            if (!hasThumbnail) {
+                currentImages.get(0).setThumbnail(true); // 첫 번째 이미지를 썸네일로 설정
+            }
+        }
+
+        diary.setImages(currentImages);
+    }
+
     // 재배일지 삭제
     public void deleteDiary(Integer diaryId, Integer userId) {
         Diary diary = diaryRepository.findById(diaryId)

@@ -142,21 +142,55 @@ public class DiaryController {
 //        return ResponseEntity.ok(diaries);
 //    }
 //
-//    // 재배일지 삭제
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<?> deleteDiary(
-//            @AuthenticationPrincipal CustomUserDetails me,
-//            @PathVariable Integer id
-//    ) {
-//        // 권한이 없을 때
-//        if (me == null) return ResponseEntity.status(401).build();
-//
-//        // 재배일지 삭제 (권한 체크 포함)
-//        diaryService.deleteDiary(id, me.getId());
-//
-//        // 성공 응답
-//        return ResponseEntity.ok(new ApiSuccess(200, "재배일지가 성공적으로 삭제되었습니다."));
-//    }
+    // 재배일지 수정
+    @PutMapping(value="/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateDiary(
+            @AuthenticationPrincipal CustomUserDetails me,
+            @PathVariable Integer id,
+            @RequestPart("form") @Validated DiaryUpdateDto form,  // 수정할 재배일지 데이터
+            @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages // 새로 추가할 이미지
+    ) throws IOException {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 새 이미지 개수 검증 (기존 이미지 + 새 이미지 ≤ 9개)
+        if (newImages != null && newImages.size() > 9) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiSuccess(400, "새로 추가할 이미지는 최대 9개까지만 업로드할 수 있습니다."));
+        }
+
+        // 파일 저장 → URL 리스트 생성
+        List<String> newImageUrls = new ArrayList<>();
+        if (newImages != null) {
+            for (MultipartFile f : newImages) {
+                if (!f.isEmpty()) {
+                    newImageUrls.add(storageService.save(f, "diary"));
+                }
+            }
+        }
+
+        // 서비스 호출
+        diaryService.updateDiary(id, me.getId(), form, newImageUrls);
+
+        // 성공 응답
+        return ResponseEntity.ok(new ApiSuccess(200, "재배일지가 성공적으로 수정되었습니다."));
+    }
+
+    // 재배일지 삭제
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteDiary(
+            @AuthenticationPrincipal CustomUserDetails me,
+            @PathVariable Integer id
+    ) {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 재배일지 삭제 (권한 체크 포함)
+        diaryService.deleteDiary(id, me.getId());
+
+        // 성공 응답
+        return ResponseEntity.ok(new ApiSuccess(200, "재배일지가 성공적으로 삭제되었습니다."));
+    }
 //
 //    // 특정 작물의 분석 결과를 포함한 재배일지 작성 폼 데이터 조회 (AI 분석 완료된 작물)
 //    @GetMapping("/form-data/{cropId}")
