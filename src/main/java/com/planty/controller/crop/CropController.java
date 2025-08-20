@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
 
+import java.io.File;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +44,69 @@ public class CropController {
 
         model.addAttribute("crops", crops);
         return "crop/crop-list";
+    }
+
+    /**
+     * 간단한 이미지 업로드 테스트용 엔드포인트
+     */
+    @PostMapping(value = "/test-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> testImageUpload(
+            @RequestParam("imageFile") MultipartFile imageFile) {
+
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        try {
+            // 파일 검증
+            if (imageFile == null || imageFile.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "이미지 파일이 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // 파일 정보 로깅
+            log.info("업로드된 파일 정보:");
+            log.info("원본 파일명: {}", imageFile.getOriginalFilename());
+            log.info("파일 크기: {} bytes", imageFile.getSize());
+            log.info("Content-Type: {}", imageFile.getContentType());
+
+            // 로컬 개발용 업로드 경로
+            String uploadPath = System.getProperty("user.dir") + "/uploads/test";
+            File uploadDir = new File(uploadPath);
+            if (!uploadDir.exists()) {
+                uploadDir.mkdirs();
+            }
+            
+            // 배포용 경로 (주석처리)
+            /*
+            // 실제 업로드 경로로 저장 테스트
+            String uploadPath = "/home/ec2-user/planty/uploads/test";
+            File uploadDir = new File(uploadPath);
+            if (!uploadDir.exists()) {
+                uploadDir.mkdirs();
+            }
+            */
+            
+            String fileName = "test_" + System.currentTimeMillis() + "_" + imageFile.getOriginalFilename();
+            File uploadFile = new File(uploadDir, fileName);
+            
+            imageFile.transferTo(uploadFile);
+            
+            response.put("success", true);
+            response.put("message", "이미지 업로드 테스트 성공");
+            response.put("filePath", uploadFile.getAbsolutePath());
+            response.put("fileSize", imageFile.getSize());
+            response.put("originalFilename", imageFile.getOriginalFilename());
+            
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("이미지 업로드 테스트 실패", e);
+            response.put("success", false);
+            response.put("message", "이미지 업로드 테스트 실패: " + e.getMessage());
+            response.put("error", e.getClass().getSimpleName());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
     /**
      * 1단계: 작물 기본 정보 등록 (이름, 재배시작일, 수확예정일) - 기존 방식 (주석처리)
@@ -75,9 +140,8 @@ public class CropController {
     */
 
     /**
-     * 2단계: 임시 등록된 작물에 이미지 업로드 및 AI 분석 - 기존 방식 (주석처리)
+     * 2단계: 임시 등록된 작물에 이미지 업로드 및 AI 분석
      */
-    /*
     @PostMapping("/{cropId}/upload-image")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> uploadImageToExistingCrop(
@@ -85,7 +149,7 @@ public class CropController {
             @RequestParam("imageFile") MultipartFile imageFile,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
 
         try {
             User user = userService.findById(userDetails.getId());
@@ -99,9 +163,12 @@ public class CropController {
             }
 
             response.put("success", true);
-            response.put("cropId", crop.getId());
-            response.put("message", "이미지가 업로드되었습니다. AI 분석을 시작합니다.");
-            response.put("analysisStatus", crop.getAnalysisStatus().toString());
+            response.put("message", "업로드 및 분석 시작");
+            response.put("data", Map.of(
+                "cropId", crop.getId(),
+                "analysisStatus", crop.getAnalysisStatus().toString(),
+                "cropImg", crop.getCropImg()
+            ));
 
             return ResponseEntity.ok(response);
 
@@ -112,7 +179,6 @@ public class CropController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-    */
 
     /**
      * 새로운 통합 등록 방식: 텍스트 데이터와 이미지를 한 번에 받아서 분석 후 결과 반환
@@ -124,7 +190,7 @@ public class CropController {
             @RequestPart(value = "imageFile", required = false) MultipartFile imageFile,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
 
         try {
             User user = userService.findById(userDetails.getId());
@@ -133,6 +199,21 @@ public class CropController {
             if (imageFile == null || imageFile.isEmpty()) {
                 response.put("success", false);
                 response.put("message", "이미지 파일이 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // 파일 크기 검증 (10MB 제한)
+            if (imageFile.getSize() > 10 * 1024 * 1024) {
+                response.put("success", false);
+                response.put("message", "이미지 파일 크기는 10MB 이하여야 합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // 파일 형식 검증
+            String contentType = imageFile.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                response.put("success", false);
+                response.put("message", "이미지 파일만 업로드 가능합니다.");
                 return ResponseEntity.badRequest().body(response);
             }
 
@@ -164,7 +245,7 @@ public class CropController {
             @RequestBody Map<String, Object> finalData,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
 
         try {
             User user = userService.findById(userDetails.getId());
@@ -187,25 +268,27 @@ public class CropController {
     }
 
     /**
-     * 기존 방식: 작물 이미지 업로드 (호환성 유지) - 주석처리
+     * 기존 방식: 작물 이미지 업로드 (호환성 유지)
      */
-    /*
     @PostMapping("/upload")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> uploadCropImage(
             @RequestParam("imageFile") MultipartFile imageFile,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
 
         try {
             User user = userService.findById(userDetails.getId());
             Crop crop = cropService.uploadCropImage(user, imageFile);
 
             response.put("success", true);
-            response.put("cropId", crop.getId());
-            response.put("message", "이미지가 업로드되었습니다. 분석을 시작합니다.");
-            response.put("analysisStatus", crop.getAnalysisStatus().toString());
+            response.put("message", "업로드 및 분석 시작");
+            response.put("data", Map.of(
+                "cropId", crop.getId(),
+                "analysisStatus", crop.getAnalysisStatus().toString(),
+                "cropImg", crop.getCropImg()
+            ));
 
             return ResponseEntity.ok(response);
 
@@ -216,7 +299,6 @@ public class CropController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-    */
 //
     /**
      * 작물 분석 상태 확인 (AJAX)
@@ -227,7 +309,7 @@ public class CropController {
             @PathVariable Integer cropId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
 
         try {
             Crop crop = cropService.getCropById(cropId);
@@ -246,7 +328,7 @@ public class CropController {
 
             // 분석 완료된 경우 분석 결과 포함
             if (crop.getAnalysisStatus() == AnalysisStatus.COMPLETED) {
-                Map<String, String> analysisResult = new HashMap<>();
+                Map<String, String> analysisResult = new LinkedHashMap<>();
                 analysisResult.put("environment", crop.getEnvironment());
                 analysisResult.put("temperature", crop.getTemperature());
                 analysisResult.put("height", crop.getHeight());
@@ -420,7 +502,7 @@ public class CropController {
             @PathVariable Integer cropId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
 
         try {
             User user = userService.findById(userDetails.getId());
@@ -441,7 +523,7 @@ public class CropController {
             }
 
             // 작물 정보
-            Map<String, Object> cropInfo = new HashMap<>();
+            Map<String, Object> cropInfo = new LinkedHashMap<>();
             cropInfo.put("id", crop.getId());
             cropInfo.put("name", crop.getName());
             cropInfo.put("cropImg", crop.getCropImg());
@@ -449,7 +531,7 @@ public class CropController {
             cropInfo.put("endAt", crop.getEndAt());
 
             // 진단 태그 옵션들
-            Map<String, String> diagnosisOptions = new HashMap<>();
+            Map<String, String> diagnosisOptions = new LinkedHashMap<>();
             diagnosisOptions.put("CURRENT_STATUS", "현재상태분석");
             diagnosisOptions.put("DISEASE_CHECK", "질병여부");
             diagnosisOptions.put("QUALITY_MARKET", "시장성");
@@ -515,7 +597,7 @@ public class CropController {
             @RequestBody Map<String, Object> request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
 
         try {
             User user = userService.findById(userDetails.getId());
@@ -534,7 +616,7 @@ public class CropController {
             }
 
             // 작물 정보
-            Map<String, Object> cropInfo = new HashMap<>();
+            Map<String, Object> cropInfo = new LinkedHashMap<>();
             cropInfo.put("id", crop.getId());
             cropInfo.put("name", crop.getName());
             cropInfo.put("cropImg", crop.getCropImg());

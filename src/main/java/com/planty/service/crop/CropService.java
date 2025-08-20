@@ -35,7 +35,7 @@ public class CropService {
     private final CropRepository cropRepository;
     private final OpenAIService openAIService;
 
-    @Value("${upload-dir:uploads}")
+    @Value("${app.upload.path:uploads/crop/}")
     private String uploadPath;
     /**
      * 작물 기본 정보로 임시 등록 (이미지 업로드 전)
@@ -200,25 +200,100 @@ public class CropService {
             throw new IllegalArgumentException("업로드할 파일이 없습니다.");
         }
 
-        // 업로드 디렉토리 생성
-        File uploadDir = new File(uploadPath);
+        // 업로드 디렉토리 생성 (절대 경로 사용)
+        String absoluteUploadPath = getAbsoluteUploadPath();
+        File uploadDir = new File(absoluteUploadPath);
         if (!uploadDir.exists()) {
-            uploadDir.mkdirs();
+            boolean created = uploadDir.mkdirs();
+            if (!created) {
+                throw new IOException("업로드 디렉토리를 생성할 수 없습니다: " + absoluteUploadPath);
+            }
+        }
+
+        // 파일 확장자 검증
+        String originalFilename = file.getOriginalFilename();
+        String extension = getFileExtension(originalFilename);
+        
+        // 허용된 이미지 확장자 검증
+        if (!isValidImageExtension(extension)) {
+            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. JPG, JPEG, PNG, GIF만 허용됩니다.");
         }
 
         // 고유한 파일명 생성
-        String originalFilename = file.getOriginalFilename();
-        String extension = "";
-        if (originalFilename != null && originalFilename.contains(".")) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-        }
         String fileName = UUID.randomUUID().toString() + extension;
 
         // 파일 저장
         File destinationFile = new File(uploadDir, fileName);
-        file.transferTo(destinationFile);
+        try {
+            file.transferTo(destinationFile);
+            log.info("이미지 파일 저장 완료: {}", destinationFile.getAbsolutePath());
+        } catch (IOException e) {
+            log.error("이미지 파일 저장 실패: {}", e.getMessage(), e);
+            throw new IOException("이미지 파일 저장에 실패했습니다: " + e.getMessage());
+        }
 
         return destinationFile.getAbsolutePath();
+    }
+
+    /**
+     * 절대 업로드 경로 반환
+     */
+    private String getAbsoluteUploadPath() {
+        // 로컬 개발용 경로
+        String basePath = System.getProperty("user.dir") + "/uploads";
+        
+        // 카테고리별 하위 디렉토리 생성
+        String categoryPath = basePath + "/crop";
+        
+        // 디렉토리가 없으면 생성
+        File categoryDir = new File(categoryPath);
+        if (!categoryDir.exists()) {
+            boolean created = categoryDir.mkdirs();
+            if (!created) {
+                log.error("카테고리 디렉토리 생성 실패: {}", categoryPath);
+                throw new RuntimeException("업로드 디렉토리를 생성할 수 없습니다: " + categoryPath);
+            }
+        }
+        
+        return categoryPath;
+        
+        // 배포용 경로 (주석처리)
+        /*
+        // EC2 배포를 위해 절대 경로 사용
+        String basePath = "/home/ec2-user/planty/uploads";
+        
+        // 카테고리별 하위 디렉토리 생성
+        String categoryPath = basePath + "/crop";
+        
+        // 디렉토리가 없으면 생성
+        File categoryDir = new File(categoryPath);
+        if (!categoryDir.exists()) {
+            boolean created = categoryDir.mkdirs();
+            if (!created) {
+                log.error("카테고리 디렉토리 생성 실패: {}", categoryPath);
+                throw new RuntimeException("업로드 디렉토리를 생성할 수 없습니다: " + categoryPath);
+            }
+        }
+        
+        return categoryPath;
+        */
+    }
+
+    /**
+     * 파일 확장자 추출
+     */
+    private String getFileExtension(String filename) {
+        if (filename == null || !filename.contains(".")) {
+            return ".jpg"; // 기본 확장자
+        }
+        return filename.substring(filename.lastIndexOf(".")).toLowerCase();
+    }
+
+    /**
+     * 유효한 이미지 확장자 검증
+     */
+    private boolean isValidImageExtension(String extension) {
+        return extension.matches("\\.(jpg|jpeg|png|gif)$");
     }
 //
 //    /**

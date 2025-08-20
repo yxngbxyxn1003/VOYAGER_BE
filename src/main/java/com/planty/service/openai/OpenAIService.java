@@ -121,6 +121,10 @@ public class OpenAIService {
     private String createCropRegistrationRequestBody(String base64Image) {
         OpenApiConfig.CropRegistration config = openApiConfig.getCropRegistration();
         
+        // JSON 이스케이프 처리
+        String escapedSystemPrompt = escapeJsonString(config.getSystemPrompt());
+        String escapedUserPrompt = escapeJsonString(config.getUserPromptTemplate());
+        
         return String.format("""
             {
                 "model": "%s",
@@ -150,12 +154,24 @@ public class OpenAIService {
             }
             """, 
             config.getModel(),
-            config.getSystemPrompt(),
-            config.getUserPromptTemplate(),
+            escapedSystemPrompt,
+            escapedUserPrompt,
             base64Image,
             config.getMaxTokens(),
             config.getTemperature()
         );
+    }
+    
+    /**
+     * JSON 문자열 이스케이프 처리
+     */
+    private String escapeJsonString(String input) {
+        if (input == null) return "";
+        return input.replace("\\", "\\\\")
+                   .replace("\"", "\\\"")
+                   .replace("\n", "\\n")
+                   .replace("\r", "\\r")
+                   .replace("\t", "\\t");
     }
 
     /**
