@@ -22,7 +22,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
 // 재배일지 서비스
 @Service
 @Transactional
@@ -59,12 +58,8 @@ public class DiaryService {
                 // 사용자가 직접 입력한 분석 결과 사용
                 diary.setAnalysis(dto.getAnalysis());
             } else if (dto.getDiagnosisData() != null && !dto.getDiagnosisData().trim().isEmpty()) {
-                // 진단 결과 데이터 사용 (재배일지용으로 포맷팅)
-                diary.setAnalysis(formatDiaryAnalysis(dto.getDiagnosisType(), dto.getDiagnosisData()));
-            } else {
-                // 재배일지용 기본 분석 결과 생성 (작물 분석과 구분)
-                String diaryAnalysis = buildDiaryAnalysisText(crop);
-                diary.setAnalysis(!diaryAnalysis.isEmpty() ? diaryAnalysis : null);
+                // 진단 결과 데이터를 원본 그대로 사용 (포맷팅 없음)
+                diary.setAnalysis(dto.getDiagnosisData());
             }
         } else {
             diary.setAnalysis(null);
@@ -79,56 +74,6 @@ public class DiaryService {
             savedDiary.setImages(imgs);
             diaryRepository.save(savedDiary); // 이미지와 함께 재저장
         }
-    }
-    
-    // 작물의 AI 분석 결과를 텍스트로 변환 (작물 등록용)
-    private String buildCropAnalysisText(Crop crop) {
-        StringBuilder analysisText = new StringBuilder();
-        
-        if (crop.getEnvironment() != null && !crop.getEnvironment().trim().isEmpty()) {
-            analysisText.append("환경: ").append(crop.getEnvironment()).append("\n\n");
-        }
-        
-        if (crop.getTemperature() != null && !crop.getTemperature().trim().isEmpty()) {
-            analysisText.append("온도: ").append(crop.getTemperature()).append("\n\n");
-        }
-        
-        if (crop.getHeight() != null && !crop.getHeight().trim().isEmpty()) {
-            analysisText.append("높이: ").append(crop.getHeight()).append("\n\n");
-        }
-        
-        if (crop.getHowTo() != null && !crop.getHowTo().trim().isEmpty()) {
-            analysisText.append("재배법: ").append(crop.getHowTo()).append("\n\n");
-        }
-        
-        return analysisText.toString().trim();
-    }
-    
-    // 재배일지용 AI 분석 결과를 텍스트로 변환 (재배일지 전용)
-    private String buildDiaryAnalysisText(Crop crop) {
-        StringBuilder analysisText = new StringBuilder();
-        analysisText.append("# 재배일지 분석 결과\n\n");
-        
-        if (crop.getEnvironment() != null && !crop.getEnvironment().trim().isEmpty()) {
-            analysisText.append("**재배 환경:** ").append(crop.getEnvironment()).append("\n\n");
-        }
-        
-        if (crop.getTemperature() != null && !crop.getTemperature().trim().isEmpty()) {
-            analysisText.append("**적정 온도:** ").append(crop.getTemperature()).append("\n\n");
-        }
-        
-        if (crop.getHeight() != null && !crop.getHeight().trim().isEmpty()) {
-            analysisText.append("**예상 높이:** ").append(crop.getHeight()).append("\n\n");
-        }
-        
-        if (crop.getHowTo() != null && !crop.getHowTo().trim().isEmpty()) {
-            analysisText.append("**재배 방법:** ").append(crop.getHowTo()).append("\n\n");
-        }
-        
-        analysisText.append("---\n");
-        analysisText.append("*이 분석 결과는 재배일지 작성 시 참고용으로 제공됩니다.*");
-        
-        return analysisText.toString().trim();
     }
 
     // 재배일지 이미지 생성 및 썸네일 설정
@@ -244,8 +189,6 @@ public class DiaryService {
                 })
                 .toList();
     }
-    
-
 
     // 내 재배일지 목록 조회 (같은 분류 작물만)
     public List<DiaryListDto> getMyDiariesByCategory(Integer userId) {
@@ -336,12 +279,8 @@ public class DiaryService {
                 // 직접 입력한 분석 결과 사용
                 diary.setAnalysis(dto.getAnalysis());
             } else if (dto.getDiagnosisData() != null && !dto.getDiagnosisData().trim().isEmpty()) {
-                // 진단 결과 데이터 사용
-                diary.setAnalysis(formatDiagnosisAnalysis(AnalysisType.valueOf(dto.getDiagnosisType()), dto.getDiagnosisData()));
-            } else {
-                // 작물의 기본 AI 분석 결과 사용
-                String cropAnalysis = buildCropAnalysisText(diary.getCrop());
-                diary.setAnalysis(!cropAnalysis.isEmpty() ? cropAnalysis : null);
+                // 진단 결과 데이터를 원본 그대로 사용 (포맷팅 없음)
+                diary.setAnalysis(dto.getDiagnosisData());
             }
         } else {
             diary.setAnalysis(null);
@@ -429,132 +368,5 @@ public class DiaryService {
 
         // 재배일지 삭제 (CASCADE로 관련 이미지들도 자동 삭제됨)
         diaryRepository.delete(diary);
-    }
-
-
-
-    // 썸네일 이미지 URL 추출 유틸리티 메서드
-    @SuppressWarnings("unused")
-    private String extractThumbnailImage(List<DiaryImage> images) {
-        if (images == null || images.isEmpty()) {
-            return null;
-        }
-        
-        return images.stream()
-                .filter(DiaryImage::getThumbnail)
-                .map(DiaryImage::getDiaryImg)
-                .findFirst()
-                .orElse(images.get(0).getDiaryImg()); // 썸네일이 없으면 첫 번째 이미지 반환
-    }
-
-    // 이미지 목록에서 썸네일 보장 (첫 번째 이미지를 썸네일로 설정)
-    @SuppressWarnings("unused")
-    private void ensureThumbnailExists(List<DiaryImage> images) {
-        if (images == null || images.isEmpty()) {
-            return;
-        }
-
-        // 기존 썸네일이 있는지 확인
-        boolean hasThumbnail = images.stream().anyMatch(DiaryImage::getThumbnail);
-        
-        if (!hasThumbnail) {
-            // 썸네일이 없으면 첫 번째 이미지를 썸네일로 설정
-            images.get(0).setThumbnail(true);
-        }
-    }
-
-    /**
-     * 진단 결과 데이터를 재배일지용 텍스트로 포맷팅
-     */
-    private String formatDiagnosisAnalysis(AnalysisType diagnosisType, String diagnosisData) {
-        try {
-            JsonNode resultNode = objectMapper.readTree(diagnosisData);
-            StringBuilder analysisText = new StringBuilder();
-
-            switch (diagnosisType) {
-                case CURRENT_STATUS:
-                    analysisText.append("# 현재 상태 분석\n\n");
-                    analysisText.append(resultNode.path("currentStatusSummary").asText("분석 결과 없음"));
-                    break;
-                    
-                case DISEASE_CHECK:
-                    analysisText.append("# 질병 진단 결과\n\n");
-                    analysisText.append("**질병 상태:** ").append(resultNode.path("diseaseStatus").asText("")).append("\n\n");
-                    analysisText.append("**상세 내용:** ").append(resultNode.path("diseaseDetails").asText("")).append("\n\n");
-                    analysisText.append("**예방 및 치료 방법:** ").append(resultNode.path("preventionMethods").asText("")).append("\n");
-                    break;
-                    
-                case QUALITY_MARKET:
-                    analysisText.append("# 품질 및 시장성 분석\n\n");
-                    analysisText.append("**상품 비율:** ").append(resultNode.path("marketRatio").asText("")).append("\n\n");
-                    analysisText.append("**색상 품질:** ").append(resultNode.path("colorUniformity").asText("")).append("\n\n");
-                    analysisText.append("**채도:** ").append(resultNode.path("saturation").asText("")).append("\n\n");
-                    analysisText.append("**명도:** ").append(resultNode.path("brightness").asText("")).append("\n\n");
-                    analysisText.append("**맛과 저장성:** ").append(resultNode.path("tasteStorage").asText("")).append("\n\n");
-                    analysisText.append("**운송 저항성:** ").append(resultNode.path("transportResistance").asText("")).append("\n\n");
-                    analysisText.append("**저장성 평가:** ").append(resultNode.path("storageEvaluation").asText("")).append("\n");
-                    break;
-                    
-                default:
-                    // 재배일지에서는 상태진단(태그별 진단)만 지원
-                    analysisText.append("# 지원하지 않는 분석 타입\n\n");
-                    analysisText.append("재배일지에서는 현재상태분석, 질병여부, 시장성 분석만 지원됩니다.");
-                    break;
-            }
-
-            return analysisText.toString();
-            
-        } catch (Exception e) {
-            return "진단 결과 데이터를 처리하는 중 오류가 발생했습니다.";
-        }
-    }
-    
-    /**
-     * 진단 결과 데이터를 재배일지용 텍스트로 포맷팅 (재배일지 전용)
-     */
-    private String formatDiaryAnalysis(AnalysisType diagnosisType, String diagnosisData) {
-        try {
-            JsonNode resultNode = objectMapper.readTree(diagnosisData);
-            StringBuilder analysisText = new StringBuilder();
-            analysisText.append("# 재배일지 진단 결과\n\n");
-
-            switch (diagnosisType) {
-                case CURRENT_STATUS:
-                    analysisText.append("## 현재 상태 분석\n\n");
-                    analysisText.append(resultNode.path("currentStatusSummary").asText("분석 결과 없음"));
-                    break;
-                    
-                case DISEASE_CHECK:
-                    analysisText.append("## 질병 진단 결과\n\n");
-                    analysisText.append("**질병 상태:** ").append(resultNode.path("diseaseStatus").asText("")).append("\n\n");
-                    analysisText.append("**상세 내용:** ").append(resultNode.path("diseaseDetails").asText("")).append("\n\n");
-                    analysisText.append("**예방 및 치료 방법:** ").append(resultNode.path("preventionMethods").asText("")).append("\n");
-                    break;
-                    
-                case QUALITY_MARKET:
-                    analysisText.append("## 품질 및 시장성 분석\n\n");
-                    analysisText.append("**상품 비율:** ").append(resultNode.path("marketRatio").asText("")).append("\n\n");
-                    analysisText.append("**색상 품질:** ").append(resultNode.path("colorUniformity").asText("")).append("\n\n");
-                    analysisText.append("**채도:** ").append(resultNode.path("saturation").asText("")).append("\n\n");
-                    analysisText.append("**명도:** ").append(resultNode.path("brightness").asText("")).append("\n\n");
-                    analysisText.append("**맛과 저장성:** ").append(resultNode.path("tasteStorage").asText("")).append("\n\n");
-                    analysisText.append("**운송 저항성:** ").append(resultNode.path("transportResistance").asText("")).append("\n\n");
-                    analysisText.append("**저장성 평가:** ").append(resultNode.path("storageEvaluation").asText("")).append("\n");
-                    break;
-                    
-                default:
-                    analysisText.append("## 지원하지 않는 분석 타입\n\n");
-                    analysisText.append("재배일지에서는 현재상태분석, 질병여부, 시장성 분석만 지원됩니다.");
-                    break;
-            }
-            
-            analysisText.append("\n---\n");
-            analysisText.append("*이 진단 결과는 재배일지 작성 시 참고용으로 제공됩니다.*");
-
-            return analysisText.toString();
-            
-        } catch (Exception e) {
-            return "진단 결과 데이터를 처리하는 중 오류가 발생했습니다.";
-        }
     }
 }

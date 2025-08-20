@@ -69,7 +69,9 @@ public class OpenApiConfig {
             2. 재배 환경 (environment) - 실내/실외/온실 등
             3. 적정 온도 (temperature) - 구체적인 온도 범위
             4. 예상 높이 (height) - 성장 후 예상 크기
-            5. 키우는 방법 (howTo) - 상세한 재배 가이드
+            5. 키우는 방법 (howTo) - 핵심적인 재배 가이드 (5줄 이내)
+
+            **중요: 재배 방법(howTo)은 5줄 이내로 간결하게 작성해주세요.**
 
             응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:
             {
@@ -77,7 +79,7 @@ public class OpenApiConfig {
               "environment": "재배환경",
               "temperature": "적정온도",
               "height": "예상높이",
-              "howTo": "상세한 키우는 방법"
+              "howTo": "핵심적인 재배 방법 (5줄 이내)"
             }
             """;
     }
@@ -93,9 +95,11 @@ public class OpenApiConfig {
             이 작물 이미지를 분석하여 현재 상태를 종합적으로 평가해주세요.
             전체적인 성장 상태, 건강도, 발달 정도 등을 포괄적으로 요약하여 JSON 형태로 제공해주세요.
             
+            **중요: 각 분석 내용은 10줄 이내로 간결하게 작성해주세요.**
+            
             응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:
             {
-              "currentStatusSummary": "현재 상태 종합 분석 내용"
+              "currentStatusSummary": "현재 상태 종합 분석 내용 (10줄 이내)"
             }
             """;
         
@@ -104,11 +108,13 @@ public class OpenApiConfig {
             이 작물 이미지를 분석하여 질병 여부를 진단해주세요.
             병충해 감염 여부, 구체적인 질병명, 예방 및 치료 방법을 JSON 형태로 제공해주세요.
             
+            **중요: 각 분석 내용은 10줄 이내로 간결하게 작성해주세요.**
+            
             응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:
             {
-              "diseaseStatus": "질병 상태 (건강함/경미한 질병/심각한 질병 등)",
-              "diseaseDetails": "발견된 질병이나 문제점 상세 설명",
-              "preventionMethods": "예방 및 치료 방법"
+              "diseaseStatus": "질병 상태 (건강함/경미한 질병/심각한 질병 등) (10줄 이내)",
+              "diseaseDetails": "발견된 질병이나 문제점 상세 설명 (10줄 이내)",
+              "preventionMethods": "예방 및 치료 방법 (10줄 이내)"
             }
             """;
         
@@ -117,15 +123,17 @@ public class OpenApiConfig {
             이 작물 이미지를 분석하여 품질과 시장성을 평가해주세요.
             출하시 상품 비율, 색상 품질, 맛과 저장성, 운송 저항성 등을 JSON 형태로 제공해주세요.
             
+            **중요: 각 분석 내용은 10줄 이내로 간결하게 작성해주세요.**
+            
             응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:
             {
-              "marketRatio": "출하시 상품 비율 평가",
-              "colorUniformity": "색 균일도 평가",
-              "saturation": "채도 평가",
-              "brightness": "명도 평가",
-              "tasteStorage": "맛과 저장성 평가",
-              "transportResistance": "운송 저장 중 손상 저항성 평가",
-              "storageEvaluation": "저장성 종합 평가"
+              "marketRatio": "출하시 상품 비율 평가 (10줄 이내)",
+              "colorUniformity": "색 균일도 평가 (10줄 이내)",
+              "saturation": "채도 평가 (10줄 이내)",
+              "brightness": "명도 평가 (10줄 이내)",
+              "tasteStorage": "맛과 저장성 평가 (10줄 이내)",
+              "transportResistance": "운송 저장 중 손상 저항성 평가 (10줄 이내)",
+              "storageEvaluation": "저장성 종합 평가 (10줄 이내)"
             }
             """;
     }
