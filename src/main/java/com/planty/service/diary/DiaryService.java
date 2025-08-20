@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 // 재배일지 서비스
@@ -177,6 +178,51 @@ public class DiaryService {
         List<Diary> diaries = diaryRepository.findByUserOrderByCreatedAtDesc(user);
 
         return diaries.stream()
+                .map(diary -> {
+                    // 썸네일 이미지 찾기
+                    String thumbnailImage = diary.getImages().stream()
+                            .filter(DiaryImage::getThumbnail)
+                            .map(DiaryImage::getDiaryImg)
+                            .findFirst()
+                            .orElse(null);
+
+                    return DiaryListDto.builder()
+                            .diaryId(diary.getId())
+                            .title(diary.getTitle())
+                            .cropName(diary.getCrop().getName())
+                            .thumbnailImage(thumbnailImage)
+                            .createdAt(diary.getCreatedAt())
+                            .build();
+                })
+                .toList();
+    }
+
+    // 내 재배일지 목록 조회 (같은 분류 작물만)
+    public List<DiaryListDto> getMyDiariesByCategory(Integer userId) {
+        User user = userRepository.getReferenceById(userId);
+        
+        // 사용자가 등록한 작물들의 카테고리 조회
+        List<Crop> userCrops = cropRepository.findByUserAndIsRegisteredTrueOrderByCreatedAtDesc(user);
+        
+        // 사용자 작물들의 카테고리명 수집
+        Set<String> userCategories = userCrops.stream()
+                .flatMap(crop -> crop.getCategories().stream())
+                .map(category -> category.getCategoryName())
+                .collect(Collectors.toSet());
+        
+        // 같은 카테고리의 작물들을 가진 재배일지 조회
+        List<Diary> diaries = diaryRepository.findByUserOrderByCreatedAtDesc(user);
+        
+        return diaries.stream()
+                .filter(diary -> {
+                    // 재배일지의 작물이 사용자가 등록한 작물과 같은 카테고리를 가지고 있는지 확인
+                    Set<String> diaryCategories = diary.getCrop().getCategories().stream()
+                            .map(category -> category.getCategoryName())
+                            .collect(Collectors.toSet());
+                    
+                    // 교집합이 있는지 확인
+                    return diaryCategories.stream().anyMatch(userCategories::contains);
+                })
                 .map(diary -> {
                     // 썸네일 이미지 찾기
                     String thumbnailImage = diary.getImages().stream()
@@ -397,6 +443,12 @@ public class DiaryService {
                     analysisText.append("**맛과 저장성:** ").append(resultNode.path("tasteStorage").asText("")).append("\n\n");
                     analysisText.append("**운송 저항성:** ").append(resultNode.path("transportResistance").asText("")).append("\n\n");
                     analysisText.append("**저장성 평가:** ").append(resultNode.path("storageEvaluation").asText("")).append("\n");
+                    break;
+                    
+                default:
+                    // 재배일지에서는 상태진단(태그별 진단)만 지원
+                    analysisText.append("# 지원하지 않는 분석 타입\n\n");
+                    analysisText.append("재배일지에서는 현재상태분석, 질병여부, 시장성 분석만 지원됩니다.");
                     break;
             }
 

@@ -126,21 +126,35 @@ public class DiaryController {
 
         return ResponseEntity.ok(diaries);
     }
+
+    // 내 재배일지 목록 조회 (같은 분류 작물만)
+    @GetMapping("/my/category")
+    public ResponseEntity<List<DiaryListDto>> getMyDiariesByCategory(
+            @AuthenticationPrincipal CustomUserDetails me
+    ) {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 내 재배일지 목록 가져오기 (같은 분류 작물만)
+        List<DiaryListDto> diaries = diaryService.getMyDiariesByCategory(me.getId());
+
+        return ResponseEntity.ok(diaries);
+    }
 //
-//    // 작물별 재배일지 목록 조회
-//    @GetMapping("/crop/{cropId}")
-//    public ResponseEntity<List<DiaryListDto>> getCropDiaries(
-//            @AuthenticationPrincipal CustomUserDetails me,
-//            @PathVariable Integer cropId
-//    ) {
-//        // 권한이 없을 때
-//        if (me == null) return ResponseEntity.status(401).build();
-//
-//        // 작물별 재배일지 목록 가져오기
-//        List<DiaryListDto> diaries = diaryService.getCropDiaries(cropId);
-//
-//        return ResponseEntity.ok(diaries);
-//    }
+    // 작물별 재배일지 목록 조회
+    @GetMapping("/crop/{cropId}")
+    public ResponseEntity<List<DiaryListDto>> getCropDiaries(
+            @AuthenticationPrincipal CustomUserDetails me,
+            @PathVariable Integer cropId
+    ) {
+        // 권한이 없을 때
+        if (me == null) return ResponseEntity.status(401).build();
+
+        // 작물별 재배일지 목록 가져오기
+        List<DiaryListDto> diaries = diaryService.getCropDiaries(cropId);
+
+        return ResponseEntity.ok(diaries);
+    }
 //
     // 재배일지 수정
     @PutMapping(value="/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
