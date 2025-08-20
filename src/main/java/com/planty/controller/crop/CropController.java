@@ -29,12 +29,13 @@ import java.util.Map;
 
 @Slf4j
 @Controller
-@RequestMapping("/crop")
+@RequestMapping("/api/crop")
 @RequiredArgsConstructor
 public class CropController {
 
     private final CropService cropService;
     private final UserService userService;
+
     /**
      * 작물 목록 페이지
      */
@@ -109,36 +110,6 @@ public class CropController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-    /**
-     * 1단계: 작물 기본 정보 등록 (이름, 재배시작일, 수확예정일) - 기존 방식 (주석처리)
-     */
-    /*
-    @PostMapping("/create-temp")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> createTempCrop(
-            @RequestBody CropRegistrationDto dto,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            User user = userService.findById(userDetails.getId());
-            Crop crop = cropService.createTempCrop(user, dto);
-
-            response.put("success", true);
-            response.put("cropId", crop.getId());
-            response.put("message", "작물 기본 정보가 저장되었습니다. 이미지를 업로드해주세요.");
-            
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            log.error("작물 기본 정보 등록 실패", e);
-            response.put("success", false);
-            response.put("message", "작물 정보 등록에 실패했습니다: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-    */
 
     /**
      * 2단계: 임시 등록된 작물에 이미지 업로드 및 AI 분석
@@ -312,7 +283,7 @@ public class CropController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-//
+
     /**
      * 작물 분석 상태 확인 (AJAX)
      */
@@ -358,154 +329,7 @@ public class CropController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-//
-//    /**
-//     * 작물 등록 완료 (이름, 날짜 입력 후)
-//     */
-//    @PostMapping("/complete-registration")
-//    @ResponseBody
-//    public ResponseEntity<Map<String, Object>> completeCropRegistration(
-//            @RequestBody CropRegistrationDto dto,
-//            @AuthenticationPrincipal CustomUserDetails userDetails) {
-//
-//        Map<String, Object> response = new HashMap<>();
-//
-//        try {
-//            User user = userService.findById(userDetails.getId());
-//            Crop crop = cropService.getCropById(dto.getId());
-//
-//            // 권한 확인
-//            if (!crop.getUser().getId().equals(user.getId())) {
-//                response.put("success", false);
-//                response.put("message", "권한이 없습니다.");
-//                return ResponseEntity.status(403).body(response);
-//            }
-//
-//            Crop completedCrop = cropService.completeCropRegistration(dto.getId(), dto);
-//
-//            response.put("success", true);
-//            response.put("message", "작물 등록이 완료되었습니다.");
-//            response.put("crop", completedCrop);
-//
-//            return ResponseEntity.ok(response);
-//
-//        } catch (Exception e) {
-//            log.error("작물 등록 완료 실패", e);
-//            response.put("success", false);
-//            response.put("message", "작물 등록에 실패했습니다: " + e.getMessage());
-//            return ResponseEntity.badRequest().body(response);
-//        }
-//    }
-//
-//    /**
-//     * 작물 상세 정보 조회
-//     */
-//    @GetMapping("/{cropId}")
-//    public String cropDetail(@PathVariable Integer cropId,
-//                           @AuthenticationPrincipal CustomUserDetails userDetails,
-//                           Model model) {
-//        try {
-//            Crop crop = cropService.getCropById(cropId);
-//            User user = userService.findById(userDetails.getId());
-//
-//            // 권한 확인
-//            if (!crop.getUser().getId().equals(user.getId())) {
-//                model.addAttribute("error", "권한이 없습니다.");
-//                return "error/403";
-//            }
-//
-//            model.addAttribute("crop", crop);
-//            return "crop/crop-detail";
-//
-//        } catch (Exception e) {
-//            log.error("작물 상세 조회 실패", e);
-//            model.addAttribute("error", "작물 정보를 찾을 수 없습니다.");
-//            return "error/404";
-//        }
-//    }
-//
-//    /**
-//     * 홈 화면용 작물 목록 조회 (등록된 것과 미등록된 것 모두)
-//     */
-//    @GetMapping("/home")
-//    @ResponseBody
-//    public ResponseEntity<Map<String, Object>> getHomeCrops(
-//            @AuthenticationPrincipal CustomUserDetails userDetails) {
-//
-//        Map<String, Object> response = new HashMap<>();
-//
-//        try {
-//            User user = userService.findById(userDetails.getId());
-//            List<HomeCropDto> homeCrops = cropService.getHomeCrops(user);
-//
-//            response.put("success", true);
-//            response.put("crops", homeCrops);
-//
-//            return ResponseEntity.ok(response);
-//
-//        } catch (Exception e) {
-//            log.error("홈 화면용 작물 목록 조회 실패", e);
-//            response.put("success", false);
-//            response.put("message", "작물 목록 조회에 실패했습니다.");
-//            return ResponseEntity.badRequest().body(response);
-//        }
-//    }
-//
-//    /**
-//     * 등록된 작물 목록 조회 (API)
-//     */
-//    @GetMapping("/registered")
-//    @ResponseBody
-//    public ResponseEntity<Map<String, Object>> getRegisteredCrops(
-//            @AuthenticationPrincipal CustomUserDetails userDetails) {
-//
-//        Map<String, Object> response = new HashMap<>();
-//
-//        try {
-//            User user = userService.findById(userDetails.getId());
-//            List<Crop> registeredCrops = cropService.getUserRegisteredCrops(user);
-//
-//            response.put("success", true);
-//            response.put("crops", registeredCrops);
-//
-//            return ResponseEntity.ok(response);
-//
-//        } catch (Exception e) {
-//            log.error("등록된 작물 목록 조회 실패", e);
-//            response.put("success", false);
-//            response.put("message", "작물 목록 조회에 실패했습니다.");
-//            return ResponseEntity.badRequest().body(response);
-//        }
-//    }
-//
-//    /**
-//     * 작물 삭제
-//     */
-//    @DeleteMapping("/{cropId}")
-//    @ResponseBody
-//    public ResponseEntity<Map<String, Object>> deleteCrop(
-//            @PathVariable Integer cropId,
-//            @AuthenticationPrincipal CustomUserDetails userDetails) {
-//
-//        Map<String, Object> response = new HashMap<>();
-//
-//        try {
-//            User user = userService.findById(userDetails.getId());
-//            cropService.deleteCrop(cropId, user);
-//
-//            response.put("success", true);
-//            response.put("message", "작물이 삭제되었습니다.");
-//
-//            return ResponseEntity.ok(response);
-//
-//        } catch (Exception e) {
-//            log.error("작물 삭제 실패", e);
-//            response.put("success", false);
-//            response.put("message", "작물 삭제에 실패했습니다: " + e.getMessage());
-//            return ResponseEntity.badRequest().body(response);
-//        }
-//    }
-//
+
     /**
      * 작물 태그별 진단 페이지 정보 조회 (진단할 작물 정보 + 태그 선택 UI)
      */
@@ -607,7 +431,7 @@ public class CropController {
                 .body(new CropDetailAnalysisResult(false, "진단에 실패했습니다: " + e.getMessage(), request.getAnalysisType()));
         }
     }
-//
+
     /**
      * 진단 결과를 바탕으로 재배일지 작성 폼 데이터 조회
      */

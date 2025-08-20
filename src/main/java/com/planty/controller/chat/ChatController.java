@@ -14,7 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.attribute.UserPrincipal;
 import java.util.List;
 import java.util.UUID;
 
@@ -65,8 +64,8 @@ public class ChatController {
     }
 
     @PostMapping("/block/{blockId}")
-    public ResponseEntity<Void> blockUser(@AuthenticationPrincipal  Integer userId, @PathVariable Integer blockId) {
-        chatService.blockUser(blockId, userId);
+    public ResponseEntity<Void> blockUser(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Integer blockId) {
+        chatService.blockUser(blockId, user.getId());
         return ResponseEntity.ok().build();
     }
 
