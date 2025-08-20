@@ -38,7 +38,14 @@ jwt:
   access-exp-millis: 86400000     # 1시간
 
 # 업로드 디렉토리 설정
-upload-dir: uploads
+upload-dir: uploads  # 로컬 개발용 상대 경로
+# upload-dir: /home/ec2-user/planty/uploads  # 배포용 절대 경로 (주석처리)
+
+app:
+  upload:
+    path: uploads/crop/  # 로컬 개발용 상대 경로
+    # 배포용 절대 경로 (주석처리)
+    # path: /home/ec2-user/planty/uploads/crop/
 
 # 파라미터 스토어 설정 (배포용)
 parameter-store:

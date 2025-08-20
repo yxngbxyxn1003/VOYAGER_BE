@@ -73,6 +73,13 @@ public class OpenAIService {
      * 작물 이미지를 분석하여 작물 정보를 반환 (작물 등록용)
      */
     public CropAnalysisResult analyzeCropImage(String imagePath) {
+        return analyzeCropImage(imagePath, AnalysisType.REGISTRATION_ANALYSIS);
+    }
+
+    /**
+     * 작물 이미지를 분석하여 작물 정보를 반환 (분석 타입 지정)
+     */
+    public CropAnalysisResult analyzeCropImage(String imagePath, AnalysisType analysisType) {
         String apiKey = getApiKey();
         if (apiKey == null || apiKey.trim().isEmpty()) {
             log.error("OpenAI API key가 설정되지 않았습니다.");
@@ -121,6 +128,10 @@ public class OpenAIService {
     private String createCropRegistrationRequestBody(String base64Image) {
         OpenApiConfig.CropRegistration config = openApiConfig.getCropRegistration();
         
+        // JSON 이스케이프 처리
+        String escapedSystemPrompt = escapeJsonString(config.getSystemPrompt());
+        String escapedUserPrompt = escapeJsonString(config.getUserPromptTemplate());
+        
         return String.format("""
             {
                 "model": "%s",
@@ -150,12 +161,24 @@ public class OpenAIService {
             }
             """, 
             config.getModel(),
-            config.getSystemPrompt(),
-            config.getUserPromptTemplate(),
+            escapedSystemPrompt,
+            escapedUserPrompt,
             base64Image,
             config.getMaxTokens(),
             config.getTemperature()
         );
+    }
+    
+    /**
+     * JSON 문자열 이스케이프 처리
+     */
+    private String escapeJsonString(String input) {
+        if (input == null) return "";
+        return input.replace("\\", "\\\\")
+                   .replace("\"", "\\\"")
+                   .replace("\n", "\\n")
+                   .replace("\r", "\\r")
+                   .replace("\t", "\\t");
     }
 
     /**
@@ -310,6 +333,7 @@ public class OpenAIService {
             case CURRENT_STATUS -> config.getCurrentStatusPrompt();
             case DISEASE_CHECK -> config.getDiseaseCheckPrompt();
             case QUALITY_MARKET -> config.getQualityMarketPrompt();
+            case REGISTRATION_ANALYSIS -> throw new IllegalArgumentException("재배방법 분석은 이 메서드에서 지원하지 않습니다.");
         };
     }
 

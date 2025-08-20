@@ -9,7 +9,20 @@ import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest
 @Transactional
-@TestPropertySource(locations = "classpath:application.yml")
+@TestPropertySource(properties = {
+    "spring.datasource.url=jdbc:h2:mem:testdb",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.datasource.username=sa",
+    "spring.datasource.password=",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+    "jwt.secret=test-secret-key-for-testing-only",
+    "upload-dir=test-uploads",
+    "parameter-store.enabled=false",
+    "ai.openai.api-key=test-key",
+    "ai.openai.timeout=30",
+    "ai.openai.maxRetries=1"
+})
 class UserRepositoryTest {
 
     @Autowired
