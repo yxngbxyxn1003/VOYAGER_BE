@@ -18,6 +18,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 import java.util.HashMap;
 import java.util.List;
@@ -43,8 +44,9 @@ public class CropController {
         return "crop/crop-list";
     }
     /**
-     * 1단계: 작물 기본 정보 등록 (이름, 재배시작일, 수확예정일)
+     * 1단계: 작물 기본 정보 등록 (이름, 재배시작일, 수확예정일) - 기존 방식 (주석처리)
      */
+    /*
     @PostMapping("/create-temp")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> createTempCrop(
@@ -70,10 +72,12 @@ public class CropController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+    */
 
     /**
-     * 2단계: 임시 등록된 작물에 이미지 업로드 및 AI 분석
+     * 2단계: 임시 등록된 작물에 이미지 업로드 및 AI 분석 - 기존 방식 (주석처리)
      */
+    /*
     @PostMapping("/{cropId}/upload-image")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> uploadImageToExistingCrop(
@@ -108,10 +112,84 @@ public class CropController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+    */
 
     /**
-     * 기존 방식: 작물 이미지 업로드 (호환성 유지)
+     * 새로운 통합 등록 방식: 텍스트 데이터와 이미지를 한 번에 받아서 분석 후 결과 반환
      */
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> registerCropWithImage(
+            @RequestPart("cropData") CropRegistrationDto cropData,
+            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            User user = userService.findById(userDetails.getId());
+            
+            // 이미지 파일 검증
+            if (imageFile == null || imageFile.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "이미지 파일이 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // 텍스트 데이터와 이미지를 한 번에 처리하여 분석 결과 반환
+            Map<String, Object> analysisResult = cropService.analyzeCropWithData(user, cropData, imageFile);
+
+            response.put("success", true);
+            response.put("message", "이미지 분석이 완료되었습니다. 최종 등록을 진행해주세요.");
+            response.put("cropData", cropData);  // 사용자가 입력한 텍스트 데이터
+            response.put("analysisResult", analysisResult);  // AI 분석 결과
+            response.put("tempCropId", analysisResult.get("tempCropId"));  // 임시 작물 ID
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("작물 등록 및 분석 실패", e);
+            response.put("success", false);
+            response.put("message", "작물 등록에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 최종 등록: 분석 결과와 텍스트 데이터를 DB에 저장
+     */
+    @PostMapping("/final-register")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> finalizeCropRegistration(
+            @RequestBody Map<String, Object> finalData,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            User user = userService.findById(userDetails.getId());
+            
+            // 최종 등록 처리
+            Crop savedCrop = cropService.finalizeCropRegistration(user, finalData);
+
+            response.put("success", true);
+            response.put("message", "작물이 성공적으로 등록되었습니다.");
+            response.put("cropId", savedCrop.getId());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("최종 등록 실패", e);
+            response.put("success", false);
+            response.put("message", "최종 등록에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 기존 방식: 작물 이미지 업로드 (호환성 유지) - 주석처리
+     */
+    /*
     @PostMapping("/upload")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> uploadCropImage(
@@ -138,6 +216,7 @@ public class CropController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+    */
 //
     /**
      * 작물 분석 상태 확인 (AJAX)

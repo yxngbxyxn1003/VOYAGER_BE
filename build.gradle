@@ -36,6 +36,9 @@ dependencies {
 
     // DB 드라이버 (MySQL)
     runtimeOnly 'com.mysql:mysql-connector-j'
+    
+    // 테스트용 H2 데이터베이스
+    testRuntimeOnly 'com.h2database:h2'
 
     // Lombok (컴파일용 + annotation 처리용)
     compileOnly 'org.projectlombok:lombok:1.18.30'

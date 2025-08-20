@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.Map;
+import java.util.HashMap;
 
 @Slf4j
 @Service
@@ -122,7 +124,9 @@ public class CropService {
                     crop.setTemperature(analysisResult.getTemperature());
                     crop.setHeight(analysisResult.getHeight());
                     crop.setHowTo(analysisResult.getHowTo());
-                    // 분석 완료 후에도 isRegistered는 false로 유지 (사용자가 직접 등록 완료해야 함)
+                    // AI 분석 완료 시 자동으로 등록 완료 상태로 변경
+                    crop.setIsRegistered(true);
+                    log.info("작물 분석 완료 및 등록 완료: Crop ID {}", cropId);
                 } else {
                     crop.setAnalysisStatus(AnalysisStatus.FAILED);
                     log.error("이미지 분석 실패: {}", analysisResult.getAnalysisMessage());
@@ -297,6 +301,112 @@ public class CropService {
         } catch (Exception e) {
             log.error("작물 세부 분석 중 오류 발생 - 작물 ID: {}, 분석 타입: {}", crop.getId(), analysisType, e);
             return new CropDetailAnalysisResult(false, "분석 중 오류가 발생했습니다: " + e.getMessage(), analysisType);
+        }
+    }
+
+    /**
+     * 새로운 통합 등록 방식: 텍스트 데이터와 이미지를 한 번에 처리하여 분석 결과 반환
+     */
+    public Map<String, Object> analyzeCropWithData(User user, CropRegistrationDto cropData, MultipartFile imageFile) throws IOException {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 1. 이미지 파일 저장
+            String savedImagePath = saveImageFile(imageFile);
+
+            // 2. 임시 작물 엔티티 생성 (DB 저장 없이)
+            Crop tempCrop = new Crop();
+            tempCrop.setUser(user);
+            tempCrop.setName(cropData.getName());
+            tempCrop.setStartAt(cropData.getStartAt());
+            tempCrop.setEndAt(cropData.getEndAt());
+            tempCrop.setCropImg(savedImagePath);
+            tempCrop.setAnalysisStatus(AnalysisStatus.ANALYZING);
+            tempCrop.setIsRegistered(false);
+            tempCrop.setHarvest(false);
+
+            // 3. 임시로 DB에 저장 (분석 완료 후 삭제 예정)
+            Crop savedTempCrop = cropRepository.save(tempCrop);
+
+            // 4. 동기적으로 이미지 분석 수행 (비동기 대신 즉시 결과 반환)
+            CropAnalysisResult analysisResult = openAIService.analyzeCropImage(savedImagePath);
+
+            // 5. 분석 결과 처리
+            if (analysisResult.isSuccess()) {
+                // 분석 성공 시 임시 작물 업데이트
+                savedTempCrop.setAnalysisStatus(AnalysisStatus.COMPLETED);
+                savedTempCrop.setEnvironment(analysisResult.getEnvironment());
+                savedTempCrop.setTemperature(analysisResult.getTemperature());
+                savedTempCrop.setHeight(analysisResult.getHeight());
+                savedTempCrop.setHowTo(analysisResult.getHowTo());
+                savedTempCrop.setIsRegistered(false); // 최종 등록 전까지는 false 유지
+
+                cropRepository.save(savedTempCrop);
+
+                // 결과 반환
+                result.put("tempCropId", savedTempCrop.getId());
+                result.put("analysisSuccess", true);
+                result.put("environment", analysisResult.getEnvironment());
+                result.put("temperature", analysisResult.getTemperature());
+                result.put("height", analysisResult.getHeight());
+                result.put("howTo", analysisResult.getHowTo());
+                result.put("message", "이미지 분석이 완료되었습니다.");
+
+            } else {
+                // 분석 실패 시 임시 작물 삭제
+                cropRepository.delete(savedTempCrop);
+                
+                result.put("tempCropId", null);
+                result.put("analysisSuccess", false);
+                result.put("message", "이미지 분석에 실패했습니다: " + analysisResult.getAnalysisMessage());
+            }
+
+        } catch (Exception e) {
+            log.error("작물 데이터 분석 중 오류 발생", e);
+            result.put("tempCropId", null);
+            result.put("analysisSuccess", false);
+            result.put("message", "분석 중 오류가 발생했습니다: " + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /**
+     * 최종 등록: 분석 결과와 텍스트 데이터를 DB에 저장
+     */
+    public Crop finalizeCropRegistration(User user, Map<String, Object> finalData) {
+        try {
+            // 임시 작물 ID 추출
+            Integer tempCropId = (Integer) finalData.get("tempCropId");
+            if (tempCropId == null) {
+                throw new IllegalArgumentException("임시 작물 ID가 없습니다.");
+            }
+
+            // 임시 작물 조회
+            Crop tempCrop = cropRepository.findById(tempCropId)
+                    .orElseThrow(() -> new IllegalArgumentException("임시 작물을 찾을 수 없습니다."));
+
+            // 권한 확인
+            if (!tempCrop.getUser().getId().equals(user.getId())) {
+                throw new IllegalArgumentException("권한이 없습니다.");
+            }
+
+            // 분석이 완료되지 않은 경우
+            if (tempCrop.getAnalysisStatus() != AnalysisStatus.COMPLETED) {
+                throw new IllegalArgumentException("이미지 분석이 완료되지 않았습니다.");
+            }
+
+            // 최종 등록 완료 처리
+            tempCrop.setIsRegistered(true);
+            Crop finalCrop = cropRepository.save(tempCrop);
+
+            log.info("작물 최종 등록 완료: Crop ID {}", finalCrop.getId());
+
+            return finalCrop;
+
+        } catch (Exception e) {
+            log.error("최종 등록 중 오류 발생", e);
+            throw new RuntimeException("최종 등록에 실패했습니다: " + e.getMessage());
         }
     }
 }
