@@ -1,6 +1,7 @@
 package com.planty.service.diary;
 
 import com.planty.dto.diary.*;
+import com.planty.dto.crop.HomeCropDto;
 import com.planty.entity.crop.AnalysisType;
 import com.planty.entity.crop.Crop;
 import com.planty.entity.diary.Diary;
@@ -52,18 +53,18 @@ public class DiaryService {
         diary.setTitle(dto.getTitle());
         diary.setContent(dto.getContent());
         
-        // AI 진단 결과 포함 처리
+        // AI 분석 결과 포함 처리 (재배일지 전용)
         if (dto.getIncludeAnalysis() != null && dto.getIncludeAnalysis()) {
             if (dto.getAnalysis() != null && !dto.getAnalysis().trim().isEmpty()) {
-                // 직접 입력한 분석 결과 사용
+                // 사용자가 직접 입력한 분석 결과 사용
                 diary.setAnalysis(dto.getAnalysis());
             } else if (dto.getDiagnosisData() != null && !dto.getDiagnosisData().trim().isEmpty()) {
-                // 진단 결과 데이터 사용
-                diary.setAnalysis(formatDiagnosisAnalysis(dto.getDiagnosisType(), dto.getDiagnosisData()));
+                // 진단 결과 데이터 사용 (재배일지용으로 포맷팅)
+                diary.setAnalysis(formatDiaryAnalysis(dto.getDiagnosisType(), dto.getDiagnosisData()));
             } else {
-                // 작물의 기본 AI 분석 결과 사용
-                String cropAnalysis = buildCropAnalysisText(crop);
-                diary.setAnalysis(!cropAnalysis.isEmpty() ? cropAnalysis : null);
+                // 재배일지용 기본 분석 결과 생성 (작물 분석과 구분)
+                String diaryAnalysis = buildDiaryAnalysisText(crop);
+                diary.setAnalysis(!diaryAnalysis.isEmpty() ? diaryAnalysis : null);
             }
         } else {
             diary.setAnalysis(null);
@@ -80,7 +81,7 @@ public class DiaryService {
         }
     }
     
-    // 작물의 AI 분석 결과를 텍스트로 변환
+    // 작물의 AI 분석 결과를 텍스트로 변환 (작물 등록용)
     private String buildCropAnalysisText(Crop crop) {
         StringBuilder analysisText = new StringBuilder();
         
@@ -99,6 +100,33 @@ public class DiaryService {
         if (crop.getHowTo() != null && !crop.getHowTo().trim().isEmpty()) {
             analysisText.append("재배법: ").append(crop.getHowTo()).append("\n\n");
         }
+        
+        return analysisText.toString().trim();
+    }
+    
+    // 재배일지용 AI 분석 결과를 텍스트로 변환 (재배일지 전용)
+    private String buildDiaryAnalysisText(Crop crop) {
+        StringBuilder analysisText = new StringBuilder();
+        analysisText.append("# 재배일지 분석 결과\n\n");
+        
+        if (crop.getEnvironment() != null && !crop.getEnvironment().trim().isEmpty()) {
+            analysisText.append("**재배 환경:** ").append(crop.getEnvironment()).append("\n\n");
+        }
+        
+        if (crop.getTemperature() != null && !crop.getTemperature().trim().isEmpty()) {
+            analysisText.append("**적정 온도:** ").append(crop.getTemperature()).append("\n\n");
+        }
+        
+        if (crop.getHeight() != null && !crop.getHeight().trim().isEmpty()) {
+            analysisText.append("**예상 높이:** ").append(crop.getHeight()).append("\n\n");
+        }
+        
+        if (crop.getHowTo() != null && !crop.getHowTo().trim().isEmpty()) {
+            analysisText.append("**재배 방법:** ").append(crop.getHowTo()).append("\n\n");
+        }
+        
+        analysisText.append("---\n");
+        analysisText.append("*이 분석 결과는 재배일지 작성 시 참고용으로 제공됩니다.*");
         
         return analysisText.toString().trim();
     }
@@ -122,9 +150,29 @@ public class DiaryService {
     }
 
     // 재배일지 작성용 사용자 작물 목록 조회 (등록된 작물만)
-    public List<Crop> getUserCrops(Integer userId) {
+    public List<HomeCropDto> getUserCrops(Integer userId) {
         User user = userRepository.getReferenceById(userId);
-        return cropRepository.findByUserAndIsRegisteredTrueOrderByCreatedAtDesc(user);
+        List<Crop> crops = cropRepository.findByUserAndIsRegisteredTrueOrderByCreatedAtDesc(user);
+        
+        return crops.stream()
+                .map(crop -> {
+                    // 카테고리명 추출 (첫 번째 카테고리 사용)
+                    String categoryName = crop.getCategories().stream()
+                            .findFirst()
+                            .map(category -> category.getCategoryName())
+                            .orElse("기타");
+                    
+                    return new HomeCropDto(
+                            crop.getId(),
+                            crop.getName(),
+                            crop.getCropImg(),
+                            crop.getStartAt() != null ? crop.getStartAt().toString() : null,
+                            crop.getIsRegistered(),
+                            crop.getAnalysisStatus() != null ? crop.getAnalysisStatus().name() : null,
+                            categoryName
+                    );
+                })
+                .toList();
     }
 
     // 재배일지 상세 조회
@@ -196,6 +244,8 @@ public class DiaryService {
                 })
                 .toList();
     }
+    
+
 
     // 내 재배일지 목록 조회 (같은 분류 작물만)
     public List<DiaryListDto> getMyDiariesByCategory(Integer userId) {
@@ -451,6 +501,55 @@ public class DiaryService {
                     analysisText.append("재배일지에서는 현재상태분석, 질병여부, 시장성 분석만 지원됩니다.");
                     break;
             }
+
+            return analysisText.toString();
+            
+        } catch (Exception e) {
+            return "진단 결과 데이터를 처리하는 중 오류가 발생했습니다.";
+        }
+    }
+    
+    /**
+     * 진단 결과 데이터를 재배일지용 텍스트로 포맷팅 (재배일지 전용)
+     */
+    private String formatDiaryAnalysis(AnalysisType diagnosisType, String diagnosisData) {
+        try {
+            JsonNode resultNode = objectMapper.readTree(diagnosisData);
+            StringBuilder analysisText = new StringBuilder();
+            analysisText.append("# 재배일지 진단 결과\n\n");
+
+            switch (diagnosisType) {
+                case CURRENT_STATUS:
+                    analysisText.append("## 현재 상태 분석\n\n");
+                    analysisText.append(resultNode.path("currentStatusSummary").asText("분석 결과 없음"));
+                    break;
+                    
+                case DISEASE_CHECK:
+                    analysisText.append("## 질병 진단 결과\n\n");
+                    analysisText.append("**질병 상태:** ").append(resultNode.path("diseaseStatus").asText("")).append("\n\n");
+                    analysisText.append("**상세 내용:** ").append(resultNode.path("diseaseDetails").asText("")).append("\n\n");
+                    analysisText.append("**예방 및 치료 방법:** ").append(resultNode.path("preventionMethods").asText("")).append("\n");
+                    break;
+                    
+                case QUALITY_MARKET:
+                    analysisText.append("## 품질 및 시장성 분석\n\n");
+                    analysisText.append("**상품 비율:** ").append(resultNode.path("marketRatio").asText("")).append("\n\n");
+                    analysisText.append("**색상 품질:** ").append(resultNode.path("colorUniformity").asText("")).append("\n\n");
+                    analysisText.append("**채도:** ").append(resultNode.path("saturation").asText("")).append("\n\n");
+                    analysisText.append("**명도:** ").append(resultNode.path("brightness").asText("")).append("\n\n");
+                    analysisText.append("**맛과 저장성:** ").append(resultNode.path("tasteStorage").asText("")).append("\n\n");
+                    analysisText.append("**운송 저항성:** ").append(resultNode.path("transportResistance").asText("")).append("\n\n");
+                    analysisText.append("**저장성 평가:** ").append(resultNode.path("storageEvaluation").asText("")).append("\n");
+                    break;
+                    
+                default:
+                    analysisText.append("## 지원하지 않는 분석 타입\n\n");
+                    analysisText.append("재배일지에서는 현재상태분석, 질병여부, 시장성 분석만 지원됩니다.");
+                    break;
+            }
+            
+            analysisText.append("\n---\n");
+            analysisText.append("*이 진단 결과는 재배일지 작성 시 참고용으로 제공됩니다.*");
 
             return analysisText.toString();
             

@@ -4,6 +4,7 @@ import com.planty.common.ApiSuccess;
 import com.planty.config.CustomUserDetails;
 
 import com.planty.dto.diary.*;
+import com.planty.dto.crop.HomeCropDto;
 import com.planty.entity.crop.Crop;
 
 
@@ -33,7 +34,7 @@ public class DiaryController {
 //
     // 재배일지 작성용 사용자 작물 목록 조회
     @GetMapping("/crops")
-    public ResponseEntity<List<Crop>> getUserCrops(
+    public ResponseEntity<List<HomeCropDto>> getUserCrops(
             @AuthenticationPrincipal CustomUserDetails me
     ) {
         // 권한이 없을 때
@@ -113,23 +114,9 @@ public class DiaryController {
 //        return ResponseEntity.ok(diaries);
 //    }
 //
-    // 내 재배일지 목록 조회
+    // 내 재배일지 목록 조회 (같은 분류 작물만)
     @GetMapping("/my")
     public ResponseEntity<List<DiaryListDto>> getMyDiaries(
-            @AuthenticationPrincipal CustomUserDetails me
-    ) {
-        // 권한이 없을 때
-        if (me == null) return ResponseEntity.status(401).build();
-
-        // 내 재배일지 목록 가져오기
-        List<DiaryListDto> diaries = diaryService.getUserDiaries(me.getId());
-
-        return ResponseEntity.ok(diaries);
-    }
-
-    // 내 재배일지 목록 조회 (같은 분류 작물만)
-    @GetMapping("/my/category")
-    public ResponseEntity<List<DiaryListDto>> getMyDiariesByCategory(
             @AuthenticationPrincipal CustomUserDetails me
     ) {
         // 권한이 없을 때
@@ -140,6 +127,8 @@ public class DiaryController {
 
         return ResponseEntity.ok(diaries);
     }
+
+
 //
     // 작물별 재배일지 목록 조회
     @GetMapping("/crop/{cropId}")

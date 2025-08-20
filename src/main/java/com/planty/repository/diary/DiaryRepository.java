@@ -23,4 +23,8 @@ public interface DiaryRepository extends JpaRepository<Diary, Integer> {
     // 작물별 재배일지 목록 조회 (최신순)
     @EntityGraph(attributePaths = {"user", "crop", "images"})
     List<Diary> findByCropIdOrderByCreatedAtDesc(Integer cropId);
+    
+    // 사용자별 재배일지 목록 조회 (같은 분류 작물만)
+    @EntityGraph(attributePaths = {"crop", "images"})
+    List<Diary> findByUserAndCropNameInOrderByCreatedAtDesc(User user, List<String> cropNames);
 }
