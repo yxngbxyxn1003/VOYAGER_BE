@@ -4,9 +4,9 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/Centralthon?serverTimezone=UTC
-    username: back
-    password: 1234
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
   jpa:
     properties:
@@ -16,10 +16,11 @@ spring:
         highlight_sql: true
         generate_statistics: true
     hibernate:
-      ddl-auto: none
+      ddl-auto: none   # 필요 시 update
     database-platform: org.hibernate.dialect.MySQL8Dialect
     generate-ddl: false
     show-sql: true
+
   servlet:
     multipart:
       max-file-size: 10MB
@@ -28,26 +29,22 @@ spring:
 logging:
   level:
     org.hibernate.SQL: DEBUG
-    org.hibernate.orm.jdbc.bind: TRACE      # 파라미터 값 바인딩 로그
-    org.hibernate.orm.jdbc.extract: TRACE   # 결과 추출 로그
-    org.hibernate.type: TRACE               # (보조) 타입 바인딩 로그
+    org.hibernate.orm.jdbc.bind: TRACE
+    org.hibernate.orm.jdbc.extract: TRACE
+    org.hibernate.type: TRACE
 
-# JWT 설정
+# JWT 설정 (env에서 불러오기)
 jwt:
-  secret: "change-this-to-a-very-long-random-secret-at-least-256-bits"
-  access-exp-millis: 86400000     # 1시간
+  secret: ${JWT_SECRET}
 
-# 업로드 디렉토리 설정
-upload-dir: uploads  # 로컬 개발용 상대 경로
-# upload-dir: /home/ec2-user/planty/uploads  # 배포용 절대 경로 (주석처리)
+# 업로드 디렉토리
+upload-dir: ${APP_UPLOAD_DIR}
 
 app:
   upload:
-    path: uploads/crop/  # 로컬 개발용 상대 경로
-    # 배포용 절대 경로 (주석처리)
-    # path: /home/ec2-user/planty/uploads/crop/
+    path: ${APP_UPLOAD_DIR}/crop/
 
-# 파라미터 스토어 설정 (배포용)
+# 파라미터 스토어 (옵션)
 parameter-store:
   enabled: ${PARAMETER_STORE_ENABLED:false}
   region: ${AWS_REGION:us-east-1}
@@ -56,7 +53,7 @@ parameter-store:
 # AI 모델 및 파라미터 설정
 ai:
   openai:
-    api-key: ${OPENAI_API_KEY:}
+    api-key: ${OPENAI_API_KEY}
     timeout: 60
     maxRetries: 3
     enableLogging: false
