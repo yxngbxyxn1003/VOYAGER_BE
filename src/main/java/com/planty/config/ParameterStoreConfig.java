@@ -1,0 +1,99 @@
+package com.planty.config;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import jakarta.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * 외부 파라미터 저장소 설정
+ * AWS Parameter Store, Azure Key Vault, Google Secret Manager 등을 통한 설정 관리
+ */
+@Slf4j
+@Configuration
+@Profile("!local") // local 프로필에서는 사용하지 않음
+public class ParameterStoreConfig {
+
+    @Value("${spring.profiles.active:default}")
+    private String activeProfile;
+
+    @Value("${parameter-store.enabled:false}")
+    private boolean parameterStoreEnabled;
+
+    @Value("${parameter-store.region:us-east-1}")
+    private String region;
+
+    @Value("${parameter-store.prefix:/planty}")
+    private String parameterPrefix;
+
+    // 메모리 캐시 (Redis 대신 간단한 HashMap 사용)
+    private final Map<String, String> parameterCache = new HashMap<>();
+
+    @PostConstruct
+    public void initializeParameterStore() {
+        if (!parameterStoreEnabled) {
+            log.info("Parameter Store가 비활성화되어 있습니다. 환경변수를 사용합니다.");
+            return;
+        }
+
+        log.info("Parameter Store 초기화 중... Profile: {}, Region: {}", activeProfile, region);
+
+        try {
+            // 실제 구현에서는 AWS SDK, Azure SDK 등을 사용하여 파라미터 로드
+            loadParametersFromStore();
+            log.info("Parameter Store 초기화 완료");
+        } catch (Exception e) {
+            log.error("Parameter Store 초기화 실패: {}", e.getMessage(), e);
+            throw new RuntimeException("Parameter Store 초기화 실패", e);
+        }
+    }
+
+    /**
+     * 파라미터 저장소에서 설정 로드
+     */
+    private void loadParametersFromStore() {
+        // 개발/테스트용 기본값 (실제 배포 시에는 제거)
+        if ("dev".equals(activeProfile) || "test".equals(activeProfile) || "default".equals(activeProfile)) {
+            // 환경변수에서 AI 키 조회
+            String apiKey = System.getenv("OPENAI_API_KEY");
+            if (apiKey != null && !apiKey.trim().isEmpty()) {
+                parameterCache.put("openai.api.key", apiKey);
+            } else {
+                log.warn("OPENAI_API_KEY 환경변수가 설정되지 않았습니다. OpenAI 기능이 제한될 수 있습니다.");
+            }
+            parameterCache.put("openai.timeout", "60");
+            parameterCache.put("openai.maxRetries", "3");
+        }
+    }
+
+    /**
+     * 파라미터 조회
+     */
+    public String getParameter(String key) {
+        return parameterCache.get(key);
+    }
+
+    /**
+     * OpenAI API 키 조회
+     */
+    public String getOpenAIApiKey() {
+        return getParameter("openai.api.key");
+    }
+
+    /**
+     * 파라미터 설정
+     */
+    public void setParameter(String key, String value) {
+        parameterCache.put(key, value);
+    }
+
+    /**
+     * 모든 파라미터 조회
+     */
+    public Map<String, String> getAllParameters() {
+        return new HashMap<>(parameterCache);
+    }
+}

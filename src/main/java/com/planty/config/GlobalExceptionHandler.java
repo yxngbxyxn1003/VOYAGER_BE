@@ -4,6 +4,7 @@ import com.planty.common.ApiError;
 import org.apache.commons.fileupload.FileUploadBase;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 
@@ -63,7 +64,7 @@ public class GlobalExceptionHandler {
         return ApiError.of(405, "METHOD_NOT_ALLOWED", "지원하지 않는 메서드입니다.");
     }
 
-    // 회원가입/로그인 에러 처리
+    // 커스텀 에러 처리
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<?> handleRSE(ResponseStatusException ex) {
         String code = ex.getReason(); // "DUPLICATE_USER_ID" 등 서비스에서 실어 보낸 코드
@@ -71,6 +72,11 @@ public class GlobalExceptionHandler {
             case "DUPLICATE_USER_ID"   -> "이미 존재하는 아이디입니다.";
             case "DUPLICATE_NICKNAME"  -> "이미 사용 중인 닉네임입니다.";
             case "INVALID_CREDENTIALS" -> "아이디 또는 비밀번호가 올바르지 않습니다.";
+            case "NOT_FOUND" -> "존재하지 않는 페이지입니다.";
+            case "FORBIDDEN" -> "권한이 없습니다";
+            case "NOT_ENOUGH_POINT" -> "포인트가 부족합니다.";
+            case "INVALID_PASSWORD" -> "비밀번호가 일치하지 않습니다.";
+            case "CONSTRAINT_VIOLATION" -> "데이터 무결성 위반";
             default -> "요청을 처리할 수 없습니다.";
         };
         return ApiError.of(ex.getStatusCode().value(), code != null ? code : "ERROR", msg);
@@ -122,6 +128,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleEtc(Exception ex) {
         return ApiError.of(500, "INTERNAL_ERROR", "서버 에러가 발생했습니다.");
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 }
 

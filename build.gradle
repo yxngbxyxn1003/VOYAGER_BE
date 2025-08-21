@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.3'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'application'
 }
 
 group = 'com.app'
@@ -35,6 +36,9 @@ dependencies {
 
     // DB 드라이버 (MySQL)
     runtimeOnly 'com.mysql:mysql-connector-j'
+    
+    // 테스트용 H2 데이터베이스
+    testRuntimeOnly 'com.h2database:h2'
 
     // Lombok (컴파일용 + annotation 처리용)
     compileOnly 'org.projectlombok:lombok:1.18.30'
@@ -62,6 +66,13 @@ dependencies {
 
     // 템플릿 엔진 thymeleaf
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+
+    // OpenAI API 연동
+    implementation 'com.theokanning.openai-gpt3-java:service:0.18.2'
+    implementation 'com.theokanning.openai-gpt3-java:client:0.18.2'
+
+    // JSON 처리
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
     // 스프링 시큐리티
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
@@ -88,6 +99,11 @@ dependencies {
 
     // 파일 용량 예외 처리
     implementation 'commons-fileupload:commons-fileupload:1.5'
+
+    // 웹소켓
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    // 웹클라이언트
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
 }
 
 def querydslDir = "$buildDir/generated/sources/annotaionProcessor/java"
@@ -114,4 +130,8 @@ tasks.named('test') {
 
 test {
     useJUnitPlatform()
+}
+
+application {
+    mainClass = 'com.planty.PlantyApplication'
 }

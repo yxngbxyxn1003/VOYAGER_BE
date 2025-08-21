@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: Centralthon
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/Centralthon?serverTimezone=UTC
+    username: back
+    password: 1234
+
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        highlight_sql: true
+        generate_statistics: true
+    hibernate:
+      ddl-auto: none
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    generate-ddl: false
+    show-sql: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE      # 파라미터 값 바인딩 로그
+    org.hibernate.orm.jdbc.extract: TRACE   # 결과 추출 로그
+    org.hibernate.type: TRACE               # (보조) 타입 바인딩 로그
+
+# JWT 설정
+jwt:
+  secret: "change-this-to-a-very-long-random-secret-at-least-256-bits"
+  access-exp-millis: 86400000     # 1시간
+
+# 업로드 디렉토리 설정
+app:
+  upload:
+    path: uploads/crop/
+
+# 파라미터 스토어 설정 (배포용)
+parameter-store:
+  enabled: ${PARAMETER_STORE_ENABLED:false}
+  region: ${AWS_REGION:us-east-1}
+  prefix: ${PARAMETER_PREFIX:/planty}
+
+# AI 모델 및 파라미터 설정
+ai:
+  openai:
+    api-key: ${OPENAI_API_KEY:sk-your-actual-api-key-here}  # 실제 OpenAI API 키로 변경하세요
+    timeout: 60
+    maxRetries: 3
+    enableLogging: true  # 분석 과정 로깅 활성화
+  crop-registration:
+    model: gpt-4o-mini
+    max-tokens: 1000
+    temperature: 0.1
+  crop-diagnosis:
+    model: gpt-4o
+    max-tokens: 1500
+    temperature: 0.2

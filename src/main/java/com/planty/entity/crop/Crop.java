@@ -6,9 +6,12 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 
 // 작물 엔티티
@@ -37,11 +40,24 @@ public class Crop {
     private String height;
     private String howTo;
 
+    // 분석 상태 관리
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AnalysisStatus analysisStatus = AnalysisStatus.PENDING;
+
+    // 작물 등록 상태 (이미지 업로드 후 분석 완료되기 전까지는 false)
+    @Column(nullable = false)
+    private Boolean isRegistered = false;
+
     private Boolean harvest;
+
+    @OneToMany(mappedBy = "crop", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CropCategory> categories = new ArrayList<>();
+
 
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    @CreationTimestamp
+    @UpdateTimestamp
     private LocalDateTime modifiedAt;
 }

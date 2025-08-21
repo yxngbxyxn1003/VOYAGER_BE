@@ -16,7 +16,7 @@ import java.util.UUID;
 @Service
 public class LocalStorageService implements StorageService {
 
-    @Value("${app.upload-dir}")
+    @Value("${upload-dir}")
     private String uploadDir;
 
     @Override

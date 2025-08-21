@@ -3,6 +3,7 @@ package com.planty.entity.user;
 import com.planty.dto.user.SignupFormDto;
 import com.planty.entity.board.Board;
 import com.planty.entity.crop.Crop;
+import com.planty.entity.diary.Diary;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,7 +27,8 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false)
+    //TODO: 테스트 오류로 인한 수정
+    @Column(nullable = false, name = "user_id")
     private String userId;
 
     @Column(nullable = false)
@@ -46,6 +48,9 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Board> boards = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Diary> diaries = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;
