@@ -157,65 +157,80 @@ public class CropController {
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseBody
     public ResponseEntity<Map<String, Object>> registerCropWithImage(
-            @RequestParam("cropData") String cropDataJson,
-            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestPart("cropData") String cropDataJson,
+            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-
-        Map<String, Object> response = new LinkedHashMap<>();
 
         try {
             User user = userService.findById(userDetails.getId());
             
+            // 받은 JSON 데이터 로깅
+            log.info("받은 cropData JSON: {}", cropDataJson);
+            
             // JSON 문자열을 CropRegistrationDto로 변환
             ObjectMapper objectMapper = new ObjectMapper();
+            // 날짜 형식 설정
+            objectMapper.findAndRegisterModules();
             CropRegistrationDto cropData;
             try {
                 cropData = objectMapper.readValue(cropDataJson, CropRegistrationDto.class);
+                log.info("변환된 cropData: {}", cropData);
             } catch (Exception e) {
-                response.put("success", false);
-                response.put("message", "작물 데이터 형식이 올바르지 않습니다.");
-                return ResponseEntity.badRequest().body(response);
+                log.error("JSON 파싱 오류: {}", e.getMessage());
+                return ResponseEntity.badRequest()
+                    .body(Map.of(
+                        "success", false,
+                        "message", "작물 데이터 형식이 올바르지 않습니다. 오류: " + e.getMessage()
+                    ));
             }
             
             // 이미지 파일 검증
             if (imageFile == null || imageFile.isEmpty()) {
-                response.put("success", false);
-                response.put("message", "이미지 파일이 필요합니다.");
-                return ResponseEntity.badRequest().body(response);
+                return ResponseEntity.badRequest()
+                    .body(Map.of(
+                        "success", false,
+                        "message", "이미지 파일이 필요합니다."
+                    ));
             }
 
             // 파일 크기 검증 (10MB 제한)
             if (imageFile.getSize() > 10 * 1024 * 1024) {
-                response.put("success", false);
-                response.put("message", "이미지 파일 크기는 10MB 이하여야 합니다.");
-                return ResponseEntity.badRequest().body(response);
+                return ResponseEntity.badRequest()
+                    .body(Map.of(
+                        "success", false,
+                        "message", "이미지 파일 크기는 10MB 이하여야 합니다."
+                    ));
             }
 
             // 파일 형식 검증
             String contentType = imageFile.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
-                response.put("success", false);
-                response.put("message", "이미지 파일만 업로드 가능합니다.");
-                return ResponseEntity.badRequest().body(response);
+                return ResponseEntity.badRequest()
+                    .body(Map.of(
+                        "success", false,
+                        "message", "이미지 파일만 업로드 가능합니다."
+                    ));
             }
 
             // 텍스트 데이터와 이미지를 한 번에 처리하여 재배방법 분석 결과 반환
             Map<String, Object> analysisResult = cropService.analyzeCropWithData(user, cropData, imageFile);
 
-            response.put("success", true);
-            response.put("message", "재배방법 분석이 완료되었습니다. 최종 등록을 진행해주세요.");
-            response.put("analysisType", "REGISTRATION_ANALYSIS");  // AI 분석 타입 명시
-            response.put("cropData", cropData);  // 사용자가 입력한 텍스트 데이터
-            response.put("analysisResult", analysisResult);  // AI 분석 결과
-            response.put("tempCropId", analysisResult.get("tempCropId"));  // 임시 작물 ID
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "재배방법 분석이 완료되었습니다. 최종 등록을 진행해주세요.",
+                "analysisType", "REGISTRATION_ANALYSIS",
+                "cropData", cropData,
+                "analysisResult", analysisResult,
+                "tempCropId", analysisResult.get("tempCropId")
+            ));
 
         } catch (Exception e) {
             log.error("작물 등록 및 재배방법 분석 실패", e);
-            response.put("success", false);
-            response.put("message", "작물 등록에 실패했습니다: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest()
+                .body(Map.of(
+                    "success", false,
+                    "message", "작물 등록에 실패했습니다: " + e.getMessage()
+                ));
         }
     }
 
