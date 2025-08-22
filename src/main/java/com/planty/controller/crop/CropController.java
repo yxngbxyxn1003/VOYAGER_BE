@@ -22,7 +22,6 @@ import org.springframework.http.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -552,6 +551,98 @@ public class CropController {
             log.error("재배 완료 상태 변경 실패", e);
             response.put("success", false);
             response.put("message", "상태 변경에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 작물 정보 수정 (이름, 날짜, 이미지 포함)
+     */
+    @PutMapping(value = "/{cropId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> updateCrop(
+            @PathVariable Integer cropId,
+            @RequestPart(value = "cropData", required = false) String cropDataJson,
+            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        try {
+            User user = userService.findById(userDetails.getId());
+            
+            // JSON 데이터 파싱
+            CropRegistrationDto updateDto = null;
+            if (cropDataJson != null && !cropDataJson.isBlank()) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                updateDto = objectMapper.readValue(cropDataJson, CropRegistrationDto.class);
+            }
+            
+            // 이미지 파일이 있는 경우 이미지 업데이트
+            if (imageFile != null && !imageFile.isEmpty()) {
+                // 파일 크기 검증 (10MB 제한)
+                if (imageFile.getSize() > 10 * 1024 * 1024) {
+                    response.put("success", false);
+                    response.put("message", "이미지 파일 크기는 10MB 이하여야 합니다.");
+                    return ResponseEntity.badRequest().body(response);
+                }
+
+                // 파일 형식 검증
+                String contentType = imageFile.getContentType();
+                if (contentType == null || !contentType.startsWith("image/")) {
+                    response.put("success", false);
+                    response.put("message", "이미지 파일만 업로드 가능합니다.");
+                    return ResponseEntity.badRequest().body(response);
+                }
+            }
+            
+            // 작물 정보 업데이트 (이미지 포함)
+            Crop updatedCrop = cropService.updateCropWithImage(cropId, user, updateDto, imageFile);
+
+            response.put("success", true);
+            response.put("message", "작물 정보가 성공적으로 수정되었습니다.");
+            response.put("cropId", updatedCrop.getId());
+            response.put("cropName", updatedCrop.getName());
+            response.put("startAt", updatedCrop.getStartAt());
+            response.put("endAt", updatedCrop.getEndAt());
+            response.put("cropImg", updatedCrop.getCropImg());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("작물 정보 수정 실패", e);
+            response.put("success", false);
+            response.put("message", "작물 정보 수정에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 작물 삭제
+     */
+    @DeleteMapping("/{cropId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteCrop(
+            @PathVariable Integer cropId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        try {
+            User user = userService.findById(userDetails.getId());
+            
+            cropService.deleteCrop(cropId, user);
+
+            response.put("success", true);
+            response.put("message", "작물이 성공적으로 삭제되었습니다.");
+            response.put("cropId", cropId);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("작물 삭제 실패", e);
+            response.put("success", false);
+            response.put("message", "작물 삭제에 실패했습니다: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
