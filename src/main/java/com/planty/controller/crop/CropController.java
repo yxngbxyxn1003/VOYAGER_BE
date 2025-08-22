@@ -166,6 +166,7 @@ public class CropController {
             
             // 받은 JSON 데이터 로깅
             log.info("받은 cropData JSON: {}", cropDataJson);
+            log.info("JSON 길이: {} characters", cropDataJson.length());
             
             // JSON 문자열을 CropRegistrationDto로 변환
             ObjectMapper objectMapper = new ObjectMapper();
@@ -177,11 +178,13 @@ public class CropController {
                 log.info("변환된 cropData: {}", cropData);
             } catch (Exception e) {
                 log.error("JSON 파싱 오류: {}", e.getMessage());
-                return ResponseEntity.badRequest()
-                    .body(Map.of(
-                        "success", false,
-                        "message", "작물 데이터 형식이 올바르지 않습니다. 오류: " + e.getMessage()
-                    ));
+                log.error("JSON 파싱 실패한 원본 데이터: {}", cropDataJson);
+                e.printStackTrace(); // 스택 트레이스 출력
+                Map<String, Object> errorResponse = new LinkedHashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "작물 데이터 형식이 올바르지 않습니다. 오류: " + e.getMessage());
+                errorResponse.put("receivedData", cropDataJson);
+                return ResponseEntity.badRequest().body(errorResponse);
             }
             
             // 이미지 파일 검증
