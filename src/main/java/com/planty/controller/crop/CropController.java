@@ -159,7 +159,7 @@ public class CropController {
      */
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> registerCropWithImage(
+    public ResponseEntity<CropRegistrationResponse> registerCropWithImage(
             @RequestPart("cropData") String cropDataJson,
             @RequestPart(value = "imageFile", required = false) MultipartFile imageFile,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
