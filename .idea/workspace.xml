@@ -11,31 +11,9 @@
       <change beforePath="$PROJECT_DIR$/.gradle/8.9/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.9/fileHashes/fileHashes.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gradle/8.9/fileHashes/resourceHashesCache.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.9/fileHashes/resourceHashesCache.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/outputFiles.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/outputFiles.bin" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gradle/file-system.probe" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/file-system.probe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/config/OpenApiConfig$CropDiagnosis.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/config/OpenApiConfig$CropDiagnosis.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/config/OpenApiConfig$CropRegistration.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/config/OpenApiConfig$CropRegistration.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/config/OpenApiConfig.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/config/OpenApiConfig.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/api/CropAnalysisApiController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/chat/ChatController.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/chat/ChatController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/crop/CropController.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/crop/CropController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/diary/DiaryController.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/diary/DiaryController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/entity/crop/AnalysisType.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/entity/crop/AnalysisType.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/repository/diary/DiaryRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/repository/diary/DiaryRepository.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/crop/CropService.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/crop/CropService.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/diary/DiaryService$1.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/diary/DiaryService.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/diary/DiaryService.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/openai/OpenAIService$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/openai/OpenAIService$1.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/openai/OpenAIService.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/openai/OpenAIService.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/resources/main/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/build/resources/main/application.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/tmp/compileJava/compileTransaction/stash-dir/CropController.class.uniqueId0" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/tmp/compileJava/compileTransaction/stash-dir/CropService.class.uniqueId3" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/tmp/compileJava/compileTransaction/stash-dir/OpenAIService$1.class.uniqueId2" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/tmp/compileJava/compileTransaction/stash-dir/OpenAIService.class.uniqueId1" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/tmp/compileJava/compileTransaction/stash-dir/spring-configuration-metadata.json.uniqueId4" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/tmp/compileJava/previous-compilation-data.bin" beforeDir="false" afterPath="$PROJECT_DIR$/build/tmp/compileJava/previous-compilation-data.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/META-INF/spring-configuration-metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/META-INF/spring-configuration-metadata.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -102,7 +80,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "Spring Boot.PlantyApplication.executor": "Run",
     "Spring Boot.Unnamed.executor": "Run",
-    "git-widget-placeholder": "dev",
+    "git-widget-placeholder": "clean-api-branch에 #88개",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/VOYAGER_BE",

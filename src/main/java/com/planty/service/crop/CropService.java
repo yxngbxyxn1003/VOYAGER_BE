@@ -262,4 +262,123 @@ public class CropService {
 
         return updatedCrop;
     }
+
+    /**
+     * 작물 삭제
+     */
+    public void deleteCrop(Integer cropId, User user) {
+        Crop crop = cropRepository.findById(cropId)
+                .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
+
+        // 권한 확인
+        if (!crop.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("삭제 권한이 없습니다.");
+        }
+
+        // 이미지 파일 삭제
+        if (crop.getCropImg() != null) {
+            try {
+                java.io.File imageFile = new java.io.File(crop.getCropImg());
+                if (imageFile.exists()) {
+                    imageFile.delete();
+                }
+            } catch (Exception e) {
+                log.warn("이미지 파일 삭제 실패: {}", crop.getCropImg(), e);
+            }
+        }
+
+        cropRepository.delete(crop);
+        log.info("작물 삭제 완료: Crop ID {}", cropId);
+    }
+
+    /**
+     * 작물 정보 수정
+     */
+    public Crop updateCrop(Integer cropId, User user, CropRegistrationDto updateDto) {
+        Crop crop = cropRepository.findById(cropId)
+                .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
+
+        // 권한 확인
+        if (!crop.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("수정 권한이 없습니다.");
+        }
+
+        // 등록된 작물만 수정 가능
+        if (!crop.getIsRegistered()) {
+            throw new IllegalArgumentException("등록되지 않은 작물은 수정할 수 없습니다.");
+        }
+
+        // 작물 정보 업데이트
+        if (updateDto.getName() != null) {
+            crop.setName(updateDto.getName());
+        }
+        if (updateDto.getStartAt() != null) {
+            crop.setStartAt(updateDto.getStartAt());
+        }
+        if (updateDto.getEndAt() != null) {
+            crop.setEndAt(updateDto.getEndAt());
+        }
+
+        Crop updatedCrop = cropRepository.save(crop);
+        log.info("작물 정보 수정 완료: Crop ID {}", cropId);
+
+        return updatedCrop;
+    }
+
+    /**
+     * 작물 정보 수정 (이미지 포함)
+     */
+    public Crop updateCropWithImage(Integer cropId, User user, CropRegistrationDto updateDto, MultipartFile imageFile) throws IOException {
+        Crop crop = cropRepository.findById(cropId)
+                .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
+
+        // 권한 확인
+        if (!crop.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("수정 권한이 없습니다.");
+        }
+
+        // 등록된 작물만 수정 가능
+        if (!crop.getIsRegistered()) {
+            throw new IllegalArgumentException("등록되지 않은 작물은 수정할 수 없습니다.");
+        }
+
+        // 작물 정보 업데이트
+        if (updateDto != null) {
+            if (updateDto.getName() != null) {
+                crop.setName(updateDto.getName());
+            }
+            if (updateDto.getStartAt() != null) {
+                crop.setStartAt(updateDto.getStartAt());
+            }
+            if (updateDto.getEndAt() != null) {
+                crop.setEndAt(updateDto.getEndAt());
+            }
+        }
+
+        // 이미지 파일이 있는 경우 이미지 업데이트
+        if (imageFile != null && !imageFile.isEmpty()) {
+            // 기존 이미지 파일 삭제
+            if (crop.getCropImg() != null) {
+                try {
+                    java.io.File existingImageFile = new java.io.File(crop.getCropImg());
+                    if (existingImageFile.exists()) {
+                        existingImageFile.delete();
+                        log.info("기존 이미지 파일 삭제: {}", crop.getCropImg());
+                    }
+                } catch (Exception e) {
+                    log.warn("기존 이미지 파일 삭제 실패: {}", crop.getCropImg(), e);
+                }
+            }
+
+            // 새 이미지 파일 저장
+            String savedImagePath = registrationAnalysisService.saveImageFile(imageFile);
+            crop.setCropImg(savedImagePath);
+            log.info("새 이미지 파일 저장: {}", savedImagePath);
+        }
+
+        Crop updatedCrop = cropRepository.save(crop);
+        log.info("작물 정보 수정 완료 (이미지 포함): Crop ID {}", cropId);
+
+        return updatedCrop;
+    }
 }
