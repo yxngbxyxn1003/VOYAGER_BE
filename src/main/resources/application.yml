@@ -36,7 +36,7 @@ logging:
 # JWT 설정 (env에서 불러오기)
 jwt:
   secret: ${JWT_SECRET}
-
+  access-exp-millis: ${JWT_ACCESS_EXP_MILLIS:86400000}
 # 업로드 디렉토리
 upload-dir: ${APP_UPLOAD_DIR}
 
