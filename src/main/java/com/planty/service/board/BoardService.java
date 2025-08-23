@@ -22,7 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
-
+import com.planty.storage.ImageUrlMapper;
 
 // 판매 게시판
 @Service
@@ -35,18 +35,21 @@ public class BoardService {
     private final CropRepository cropRepository;
     private final StorageService storageService;
     private final DiaryRepository diaryRepository;
+    private final ImageUrlMapper imageUrlMapper;
 
     private final Integer MINUS_POINT = 200;
 
     // 판매 가능한 작물 목록 불러오기 (harvest=true)
     @Transactional(Transactional.TxType.SUPPORTS)
     public List<BoardSellCropsResDto> getSellCrops(Integer userId) {
-        // 수확 완료 작물 목록을 최신순으로 조회
         List<Crop> crops = cropRepository.findByUser_IdAndHarvestTrueOrderByCreatedAtDesc(userId);
 
-        // Crop 엔티티를 BoardSellCropsDto로 변환, 리스트로 반환
         return crops.stream()
                 .map(BoardSellCropsResDto::of)
+                .map(dto -> {
+                    dto.setCropImg(imageUrlMapper.toPublic(dto.getCropImg()));
+                    return dto;
+                })
                 .toList();
     }
 
@@ -100,7 +103,7 @@ public class BoardService {
         SellerDto sellerDto = SellerDto.builder()
                 .sellerId(board.getUser().getId())
                 .sellerName(board.getUser().getNickname())
-                .profileImg(board.getUser().getProfileImg())
+                .profileImg(imageUrlMapper.toPublic(board.getUser().getProfileImg()))
                 .build();
 
         // 판매 게시글 이미지 처리
@@ -108,6 +111,7 @@ public class BoardService {
                 .orElse(Collections.emptyList())
                 .stream()
                 .map(BoardImage::getBoardImg)
+                .map(imageUrlMapper::toPublic)
                 .toList();
 
         // 판매 게시글 정보
@@ -288,41 +292,46 @@ public class BoardService {
 
     // 전체 게시글 목록
     public List<BoardAllResDto> getAllBoards() {
-
-        // 전체 게시글 목록 가져오기
-        List<Board> boards = boardRepository.findAllByOrderByCreatedAtDesc();
-
-        // DTO로 변환
-        return boards.stream()
+        return boardRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
                 .map(BoardAllResDto::of)
+                .map(dto -> {
+                    dto.setThumbnailImg(imageUrlMapper.toPublic(dto.getThumbnailImg()));
+                    return dto;
+                })
                 .toList();
     }
 
     // 검색어로 판매 게시글 검색
     public List<BoardAllResDto> searchBoards(String keyword) {
-        if (keyword == null || keyword.isBlank()) {
-            return boardRepository.findAllByOrderByCreatedAtDesc()
-                    .stream().map(BoardAllResDto::of).toList();
-        }
-        String pattern = "%" + keyword.trim() + "%";
-        return boardRepository.searchByKeyword(pattern)
-                .stream().map(BoardAllResDto::of).toList();
+        var list = (keyword == null || keyword.isBlank())
+                ? boardRepository.findAllByOrderByCreatedAtDesc()
+                : boardRepository.searchByKeyword("%" + keyword.trim() + "%");
+
+        return list.stream()
+                .map(BoardAllResDto::of)
+                .map(dto -> {
+                    dto.setThumbnailImg(imageUrlMapper.toPublic(dto.getThumbnailImg()));
+                    return dto;
+                })
+                .toList();
     }
+
 
     // 판매 게시글의 재배 일지 목록
     public List<BoardDiaryResDto> getSellDiary(Integer boardId) {
-
-        // 작물 아이디 가져오기
         Integer cropId = boardRepository.findCropIdByBoardId(boardId);
-
-        // 재배 일지 목록 가져오기
         List<Diary> diaries = diaryRepository.findByCropIdOrderByCreatedAtDesc(cropId);
 
-        // DTO로 변환
         return diaries.stream()
                 .map(BoardDiaryResDto::of)
+                .map(dto -> { // 🔴 썸네일 변환
+                    dto.setThumbnailImg(imageUrlMapper.toPublic(dto.getThumbnailImg()));
+                    return dto;
+                })
                 .toList();
     }
+
 
     // 판매 게시글의 재배 일지 상세 페이지
     public BoardDiaryDetailResDto getSellDiaryDetail(Integer diaryId, Integer meId) {
@@ -338,6 +347,7 @@ public class BoardService {
                 .orElse(Collections.emptyList())
                 .stream()
                 .map(DiaryImage::getDiaryImg)
+                .map(imageUrlMapper::toPublic)
                 .toList();
 
         // 날짜만 추출
