@@ -1,1 +1,41 @@
-.idea/.gradle//build/out/# macOS.DS_Store._*.AppleDouble.LSOverride.Spotlight-V100.Trashes# Environment variables.env.env.local.env.development.env.production# Secret files and keys*.key*.pem*.p12*.pfxsecrets/config/secrets/# Application configuration with sensitive dataapplication-local.ymlapplication-dev.ymlapplication-prod.ymlapplication-secret.yml# API keys and tokensapi-keys.txttokens.txtcredentials.json# 파일/uploads/
+.idea/
+
+.gradle/
+/build/
+out/
+
+# macOS
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+# Secret files and keys
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+config/secrets/
+
+# Application configuration with sensitive data
+application-local.yml
+application-dev.yml
+application-prod.yml
+application-secret.yml
+
+# API keys and tokens
+api-keys.txt
+tokens.txt
+credentials.json
+
+# 파일
+/uploads/
