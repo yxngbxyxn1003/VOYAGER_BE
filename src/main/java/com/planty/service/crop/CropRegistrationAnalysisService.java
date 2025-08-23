@@ -121,15 +121,25 @@ public class CropRegistrationAnalysisService {
 
                 cropRepository.save(savedTempCrop);
 
-                // 결과 반환
+                // null이 아닌 필드들만 결과에 포함
                 result.put("tempCropId", savedTempCrop.getId());
                 result.put("analysisSuccess", true);
                 result.put("analysisType", "REGISTRATION_ANALYSIS");
-                result.put("environment", analysisResult.getEnvironment());
-                result.put("temperature", analysisResult.getTemperature());
-                result.put("height", analysisResult.getHeight());
-                result.put("howTo", analysisResult.getHowTo());
                 result.put("message", "재배방법 분석이 완료되었습니다.");
+                
+                // null이 아닌 분석 결과만 포함
+                if (analysisResult.getEnvironment() != null && !analysisResult.getEnvironment().trim().isEmpty()) {
+                    result.put("environment", analysisResult.getEnvironment());
+                }
+                if (analysisResult.getTemperature() != null && !analysisResult.getTemperature().trim().isEmpty()) {
+                    result.put("temperature", analysisResult.getTemperature());
+                }
+                if (analysisResult.getHeight() != null && !analysisResult.getHeight().trim().isEmpty()) {
+                    result.put("height", analysisResult.getHeight());
+                }
+                if (analysisResult.getHowTo() != null && !analysisResult.getHowTo().trim().isEmpty()) {
+                    result.put("howTo", analysisResult.getHowTo());
+                }
 
             } else {
                 // 분석 실패 시 임시 작물 삭제

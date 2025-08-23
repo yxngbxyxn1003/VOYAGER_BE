@@ -218,14 +218,20 @@ public class CropController {
             // 텍스트 데이터와 이미지를 한 번에 처리하여 재배방법 분석 결과 반환
             Map<String, Object> analysisResult = cropService.analyzeCropWithData(user, cropData, imageFile);
 
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "재배방법 분석이 완료되었습니다. 최종 등록을 진행해주세요.",
-                "analysisType", "REGISTRATION_ANALYSIS",
-                "cropData", cropData,
-                "analysisResult", analysisResult,
-                "tempCropId", analysisResult.get("tempCropId")
+            // 사용자 입력값만 포함하는 응답 생성
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("success", true);
+            response.put("message", "재배방법 분석이 완료되었습니다. 최종 등록을 진행해주세요.");
+            response.put("analysisType", "REGISTRATION_ANALYSIS");
+            response.put("cropData", Map.of(
+                "name", cropData.getName(),
+                "startAt", cropData.getStartAt(),
+                "endAt", cropData.getEndAt()
             ));
+            response.put("analysisResult", analysisResult);
+            response.put("tempCropId", analysisResult.get("tempCropId"));
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             log.error("작물 등록 및 재배방법 분석 실패", e);
