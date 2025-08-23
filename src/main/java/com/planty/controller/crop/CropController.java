@@ -5,13 +5,11 @@ import com.planty.service.user.UserService;
 import com.planty.dto.crop.CropRegistrationDto;
 import com.planty.dto.crop.CropDiagnosisRequestDto;
 import com.planty.dto.crop.CropDetailAnalysisResult;
-import com.planty.dto.crop.CropRegistrationResponse;
 
 import com.planty.entity.crop.AnalysisStatus;
 import com.planty.entity.crop.Crop;
 import com.planty.entity.user.User;
 import com.planty.service.crop.CropService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -22,9 +20,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
 
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
-import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +58,13 @@ public class CropController {
         Map<String, Object> response = new LinkedHashMap<>();
 
         try {
+            // 파일 검증
+            if (imageFile == null || imageFile.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "이미지 파일이 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
             // 파일 정보 로깅
             log.info("업로드된 파일 정보:");
             log.info("원본 파일명: {}", imageFile.getOriginalFilename());
@@ -106,7 +110,6 @@ public class CropController {
         }
     }
 
-    
     /**
      * 2단계: 임시 등록된 작물에 이미지 업로드 및 AI 분석
      */
@@ -154,12 +157,10 @@ public class CropController {
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseBody
     public ResponseEntity<Map<String, Object>> registerCropWithImage(
-            @RequestParam("cropData") String cropDataJson,
-            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestPart("cropData") String cropDataJson,
+            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        Map<String, Object> response = new LinkedHashMap<>();
-        
         try {
             User user = userService.findById(userDetails.getId());
             
@@ -179,51 +180,66 @@ public class CropController {
                 log.error("JSON 파싱 오류: {}", e.getMessage());
                 log.error("JSON 파싱 실패한 원본 데이터: {}", cropDataJson);
                 e.printStackTrace(); // 스택 트레이스 출력
-                response.put("success", false);
-                response.put("message", "작물 데이터 형식이 올바르지 않습니다. 오류: " + e.getMessage());
-                response.put("receivedData", cropDataJson);
-                return ResponseEntity.badRequest().body(response);
+                Map<String, Object> errorResponse = new LinkedHashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "작물 데이터 형식이 올바르지 않습니다. 오류: " + e.getMessage());
+                errorResponse.put("receivedData", cropDataJson);
+                return ResponseEntity.badRequest().body(errorResponse);
             }
             
             // 이미지 파일 검증
             if (imageFile == null || imageFile.isEmpty()) {
-                response.put("success", false);
-                response.put("message", "이미지 파일이 필요합니다.");
-                return ResponseEntity.badRequest().body(response);
+                return ResponseEntity.badRequest()
+                    .body(Map.of(
+                        "success", false,
+                        "message", "이미지 파일이 필요합니다."
+                    ));
             }
 
             // 파일 크기 검증 (10MB 제한)
             if (imageFile.getSize() > 10 * 1024 * 1024) {
-                response.put("success", false);
-                response.put("message", "이미지 파일 크기는 10MB 이하여야 합니다.");
-                return ResponseEntity.badRequest().body(response);
+                return ResponseEntity.badRequest()
+                    .body(Map.of(
+                        "success", false,
+                        "message", "이미지 파일 크기는 10MB 이하여야 합니다."
+                    ));
             }
 
             // 파일 형식 검증
             String contentType = imageFile.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
-                response.put("success", false);
-                response.put("message", "이미지 파일만 업로드 가능합니다.");
-                return ResponseEntity.badRequest().body(response);
+                return ResponseEntity.badRequest()
+                    .body(Map.of(
+                        "success", false,
+                        "message", "이미지 파일만 업로드 가능합니다."
+                    ));
             }
 
             // 텍스트 데이터와 이미지를 한 번에 처리하여 재배방법 분석 결과 반환
             Map<String, Object> analysisResult = cropService.analyzeCropWithData(user, cropData, imageFile);
 
+            // 사용자 입력값만 포함하는 응답 생성
+            Map<String, Object> response = new LinkedHashMap<>();
             response.put("success", true);
             response.put("message", "재배방법 분석이 완료되었습니다. 최종 등록을 진행해주세요.");
-            response.put("analysisType", "REGISTRATION_ANALYSIS");  // AI 분석 타입 명시
-            response.put("cropData", cropData);  // 사용자가 입력한 텍스트 데이터
-            response.put("analysisResult", analysisResult);  // AI 분석 결과
-            response.put("tempCropId", analysisResult.get("tempCropId"));  // 임시 작물 ID
+            response.put("analysisType", "REGISTRATION_ANALYSIS");
+            response.put("cropData", Map.of(
+                "name", cropData.getName(),
+                "startAt", cropData.getStartAt(),
+                "endAt", cropData.getEndAt()
+            ));
+            response.put("analysisResult", analysisResult);
+            response.put("tempCropId", analysisResult.get("tempCropId"));
 
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             log.error("작물 등록 및 재배방법 분석 실패", e);
-            response.put("success", false);
-            response.put("message", "작물 등록에 실패했습니다: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest()
+                .body(Map.of(
+                    "success", false,
+                    "message", "작물 등록에 실패했습니다: " + e.getMessage()
+                ));
         }
     }
 
@@ -493,55 +509,6 @@ public class CropController {
     }
 
     /**
-     * JSON 문자열을 CropRegistrationDto로 변환하는 간단한 파싱 메서드
-     */
-    private CropRegistrationDto parseCropDataFromJson(String json) {
-        CropRegistrationDto cropData = new CropRegistrationDto();
-        
-        // JSON에서 따옴표 제거하고 파싱
-        json = json.replaceAll("[{}\"]", "");
-        String[] pairs = json.split(",");
-        
-        for (String pair : pairs) {
-            String[] keyValue = pair.split(":");
-            if (keyValue.length == 2) {
-                String key = keyValue[0].trim();
-                String value = keyValue[1].trim();
-                
-                switch (key) {
-                    case "name":
-                        cropData.setName(value);
-                        break;
-                    case "startAt":
-                        cropData.setStartAt(LocalDate.parse(value));
-                        break;
-                    case "endAt":
-                        cropData.setEndAt(LocalDate.parse(value));
-                        break;
-                    case "environment":
-                        cropData.setEnvironment(value);
-                        break;
-                    case "temperature":
-                        cropData.setTemperature(value);
-                        break;
-                    case "height":
-                        cropData.setHeight(value);
-                        break;
-                    case "howTo":
-                        cropData.setHowTo(value);
-                        break;
-                }
-            }
-        }
-        
-        // 기본값 설정
-        cropData.setAnalysisStatus(AnalysisStatus.PENDING);
-        cropData.setIsRegistered(false);
-        
-        return cropData;
-    }
-
-    /**
      * 진단 결과를 재배일지 템플릿으로 변환
      */
     private String createDiaryTemplate(String diagnosisType, Map<String, Object> diagnosisResult) {
@@ -612,7 +579,6 @@ public class CropController {
         }
     }
 
-
     /**
      * 작물 정보 수정 (이름, 날짜, 이미지 포함)
      */
@@ -632,7 +598,26 @@ public class CropController {
             // JSON 데이터 파싱
             CropRegistrationDto updateDto = null;
             if (cropDataJson != null && !cropDataJson.isBlank()) {
-                updateDto = parseCropDataFromJson(cropDataJson);
+                ObjectMapper objectMapper = new ObjectMapper();
+                updateDto = objectMapper.readValue(cropDataJson, CropRegistrationDto.class);
+            }
+            
+            // 이미지 파일이 있는 경우 이미지 업데이트
+            if (imageFile != null && !imageFile.isEmpty()) {
+                // 파일 크기 검증 (10MB 제한)
+                if (imageFile.getSize() > 10 * 1024 * 1024) {
+                    response.put("success", false);
+                    response.put("message", "이미지 파일 크기는 10MB 이하여야 합니다.");
+                    return ResponseEntity.badRequest().body(response);
+                }
+
+                // 파일 형식 검증
+                String contentType = imageFile.getContentType();
+                if (contentType == null || !contentType.startsWith("image/")) {
+                    response.put("success", false);
+                    response.put("message", "이미지 파일만 업로드 가능합니다.");
+                    return ResponseEntity.badRequest().body(response);
+                }
             }
             
             // 작물 정보 업데이트 (이미지 포함)
@@ -685,6 +670,4 @@ public class CropController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-    
-
 }
