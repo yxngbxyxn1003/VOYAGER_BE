@@ -248,25 +248,16 @@ public class DiaryService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "수정 권한이 없습니다.");
         }
 
-        // 기본 정보 수정
+        // 기본 정보 수정 (이미지와 무관하게)
         diary.setTitle(dto.getTitle());
         diary.setContent(dto.getContent());
 
-        // AI 분석 결과 수정
-        if (dto.getIncludeAnalysis() != null && dto.getIncludeAnalysis()) {
-            if (dto.getAnalysis() != null && !dto.getAnalysis().trim().isEmpty()) {
-                // 직접 입력한 분석 결과 사용
-                diary.setAnalysis(dto.getAnalysis());
-            } else if (dto.getDiagnosisData() != null && !dto.getDiagnosisData().trim().isEmpty()) {
-                // 진단 결과 데이터를 원본 그대로 사용 (포맷팅 없음)
-                diary.setAnalysis(dto.getDiagnosisData());
-            }
-        } else {
-            diary.setAnalysis(null);
-        }
+        
 
-        // 이미지 수정 처리
-        updateDiaryImages(diary, dto, newImageUrls);
+        // 이미지가 있는 경우에만 이미지 수정 처리
+        if (diary.getImages() != null || (newImageUrls != null && !newImageUrls.isEmpty())) {
+            updateDiaryImages(diary, dto, newImageUrls);
+        }
 
         // 재배일지 저장
         diaryRepository.save(diary);
@@ -274,7 +265,8 @@ public class DiaryService {
 
     // 재배일지 이미지 수정 처리
     private void updateDiaryImages(Diary diary, DiaryUpdateDto dto, List<String> newImageUrls) {
-        List<DiaryImage> currentImages = diary.getImages();
+        // null 안전 처리
+        List<DiaryImage> currentImages = diary.getImages() != null ? diary.getImages() : new ArrayList<>();
         
         // 삭제할 이미지 처리
         if (dto.getImagesToDelete() != null && !dto.getImagesToDelete().isEmpty()) {
