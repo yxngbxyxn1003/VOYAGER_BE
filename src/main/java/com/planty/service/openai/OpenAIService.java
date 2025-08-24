@@ -225,7 +225,7 @@ public class OpenAIService {
      */
     private String getSafeText(JsonNode node, String fieldName) {
         JsonNode fieldNode = node.get(fieldName);
-        return fieldNode != null ? fieldNode.asText() : "정보 없음";
+        return fieldNode != null ? fieldNode.asText() : "분석 중";
     }
 
     private String extractJsonFromContent(String content) {

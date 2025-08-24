@@ -130,15 +130,23 @@ public class CropRegistrationAnalysisService {
                 // null이 아닌 분석 결과만 포함
                 if (analysisResult.getEnvironment() != null && !analysisResult.getEnvironment().trim().isEmpty()) {
                     result.put("environment", analysisResult.getEnvironment());
+                } else {
+                    result.put("environment", "분석 중");
                 }
                 if (analysisResult.getTemperature() != null && !analysisResult.getTemperature().trim().isEmpty()) {
                     result.put("temperature", analysisResult.getTemperature());
+                } else {
+                    result.put("temperature", "분석 중");
                 }
                 if (analysisResult.getHeight() != null && !analysisResult.getHeight().trim().isEmpty()) {
                     result.put("height", analysisResult.getHeight());
+                } else {
+                    result.put("height", "분석 중");
                 }
                 if (analysisResult.getHowTo() != null && !analysisResult.getHowTo().trim().isEmpty()) {
                     result.put("howTo", analysisResult.getHowTo());
+                } else {
+                    result.put("howTo", "분석 중");
                 }
 
             } else {
