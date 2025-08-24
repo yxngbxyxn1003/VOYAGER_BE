@@ -107,11 +107,15 @@ public class DiaryService {
                             .map(category -> category.getCategoryName())
                             .orElse("기타");
                     
+                    // 디버깅을 위한 로그 추가
+                    System.out.println("Crop ID: " + crop.getId() + ", EndAt: " + crop.getEndAt());
+                    
                     return new HomeCropDto(
                             crop.getId(),
                             crop.getName(),
                             crop.getCropImg(),
                             crop.getStartAt() != null ? crop.getStartAt().toString() : null,
+                            crop.getEndAt() != null ? crop.getEndAt().toString() : null,
                             crop.getIsRegistered(),
                             crop.getAnalysisStatus() != null ? crop.getAnalysisStatus().name() : null,
                             categoryName
