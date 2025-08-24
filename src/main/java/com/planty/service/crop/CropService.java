@@ -195,7 +195,7 @@ public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetailWithNewImag
     }
 
     /**
-     * 작물 삭제
+     * 작물 삭제 (연결된 재배일지도 함께 삭제)
      */
     public void deleteCrop(Integer cropId, User user) {
         Crop crop = cropRepository.findById(cropId)
@@ -206,7 +206,32 @@ public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetailWithNewImag
             throw new IllegalArgumentException("삭제 권한이 없습니다.");
         }
 
-        // 이미지 파일 삭제
+        // 연결된 재배일지 먼저 삭제
+        List<Diary> connectedDiaries = diaryRepository.findByCropIdOrderByCreatedAtDesc(cropId);
+        if (!connectedDiaries.isEmpty()) {
+            log.info("작물 ID {}에 연결된 재배일지 {}개 삭제 시작", cropId, connectedDiaries.size());
+            
+            for (Diary diary : connectedDiaries) {
+                // 재배일지 이미지 파일들 삭제
+                for (DiaryImage diaryImage : diary.getImages()) {
+                    try {
+                        java.io.File imageFile = new java.io.File(diaryImage.getDiaryImg());
+                        if (imageFile.exists()) {
+                            imageFile.delete();
+                            log.info("재배일지 이미지 파일 삭제: {}", diaryImage.getDiaryImg());
+                        }
+                    } catch (Exception e) {
+                        log.warn("재배일지 이미지 파일 삭제 실패: {}", diaryImage.getDiaryImg(), e);
+                    }
+                }
+            }
+            
+            // 재배일지 엔티티들 삭제
+            diaryRepository.deleteAll(connectedDiaries);
+            log.info("작물 ID {}에 연결된 재배일지 {}개 삭제 완료", cropId, connectedDiaries.size());
+        }
+
+        // 작물 이미지 파일 삭제
         if (crop.getCropImg() != null) {
             try {
                 java.io.File imageFile = new java.io.File(crop.getCropImg());
@@ -218,6 +243,7 @@ public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetailWithNewImag
             }
         }
 
+        // 작물 엔티티 삭제
         cropRepository.delete(crop);
         log.info("작물 삭제 완료: Crop ID {}", cropId);
     }
@@ -281,27 +307,15 @@ public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetailWithNewImag
     }
 
     /**
-     * 작물과 같은 종류의 재배일지 목록 조회
+     * 해당 작물 ID에 직접 연결된 재배일지 목록 조회
      */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getCropDiariesByCategory(Integer cropId, Integer userId) {
         Crop crop = cropRepository.findById(cropId)
                 .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
 
-        // 작물의 카테고리 정보 가져오기
-        List<String> cropCategories = crop.getCategories().stream()
-                .map(category -> category.getCategoryName())
-                .toList();
-
-        if (cropCategories.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        // 같은 카테고리의 작물들을 가진 재배일지 조회
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-        
-        List<Diary> diaries = diaryRepository.findByUserAndCropNameInOrderByCreatedAtDesc(user, cropCategories);
+        // 해당 작물 ID에 직접 연결된 재배일지 검색
+        List<Diary> diaries = diaryRepository.findByCropIdOrderByCreatedAtDesc(cropId);
 
         return diaries.stream()
                 .map(diary -> {
