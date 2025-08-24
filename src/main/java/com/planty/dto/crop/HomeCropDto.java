@@ -1,35 +1,50 @@
 package com.planty.dto.crop;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import com.planty.entity.crop.AnalysisStatus;
+import com.planty.entity.crop.Crop;
+import com.planty.entity.crop.CropCategory;
+import lombok.Builder;
+import io.reactivex.annotations.BackpressureSupport;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+import java.time.LocalDate;
+import java.util.List;
+
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class HomeCropDto {
-    @JsonProperty("id")
     private Integer id;
-    
-    @JsonProperty("name")
     private String name;
-    
-    @JsonProperty("cropImg")
     private String cropImg;
-    
-    @JsonProperty("plantingDate")
-    private String plantingDate;
-    
-    @JsonProperty("endAt")
-    private String endAt;
-    
-    @JsonProperty("isRegistered")
+    private LocalDate plantingDate;
+    private LocalDate endAt;
     private Boolean isRegistered;
-    
-    @JsonProperty("analysisStatus")
-    private String analysisStatus;
-    
-    @JsonProperty("cropCategory")
-    private String cropCategory;
+    private AnalysisStatus analysisStatus;
+    private List<CropCategory> cropCategory;
+
+    public static HomeCropDto of(Crop crop) {
+
+        return HomeCropDto.builder()
+                .id(crop.getId())
+                .name(crop.getName())
+                .cropImg(crop.getCropImg())
+                .plantingDate(crop.getStartAt())
+                .endAt(crop.getEndAt())
+                .isRegistered(crop.getIsRegistered())
+                .analysisStatus(crop.getAnalysisStatus())
+                .cropCategory(crop.getCategories())
+                .build();
+
+    }
 }
+
+

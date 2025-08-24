@@ -7,11 +7,15 @@ import com.planty.entity.crop.Crop;
 import com.planty.entity.user.User;
 import com.planty.repository.crop.CropRepository;
 import com.planty.repository.user.UserRepository;
+import com.planty.storage.ImageUrlMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
@@ -27,6 +31,7 @@ public class CropService {
     private final CropRegistrationAnalysisService registrationAnalysisService;
     private final CropDiagnosisAnalysisService diagnosisAnalysisService;
     private final UserRepository userRepository;
+    private final ImageUrlMapper imageUrlMapper;
     /**
      * 작물 기본 정보로 임시 등록 (이미지 업로드 전)
      */
@@ -313,35 +318,21 @@ public class CropService {
         return updatedCrop;
     }
 
-    /**
-     * 재배일지 작성용 사용자 작물 목록 조회 (등록된 작물만)
-     */
-    @Transactional(readOnly = true)
-    public List<HomeCropDto> getDiaryCrops(Integer userId) {
-        User user = userRepository.getReferenceById(userId);
-        List<Crop> crops = cropRepository.findByUserAndIsRegisteredTrueOrderByCreatedAtDesc(user);
-        
-        return crops.stream()
-                .map(crop -> {
-                    // 카테고리명 추출 (첫 번째 카테고리 사용)
-                    String categoryName = crop.getCategories().stream()
-                            .findFirst()
-                            .map(category -> category.getCategoryName())
-                            .orElse("기타");
-                    
-                    return new HomeCropDto(
-                            crop.getId(),
-                            crop.getName(),
-                            crop.getCropImg(),
-                            crop.getStartAt() != null ? crop.getStartAt().toString() : null,
-                            crop.getEndAt() != null ? crop.getEndAt().toString() : null,
-                            crop.getIsRegistered(),
-                            crop.getAnalysisStatus() != null ? crop.getAnalysisStatus().name() : null,
-                            categoryName
-                    );
-                })
+    public List<HomeCropDto> getHomeCrop(Integer userId){
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NOT_FOUND"));
+        return cropRepository.findByUserOrderByCreatedAtDesc(user)
+                .stream()
+                .map(HomeCropDto::of)
+                .map(dto->{
+                    dto.setCropImg(imageUrlMapper.toPublic(dto.getCropImg()));
+                    return dto;
+          })
                 .toList();
+
     }
+
+
+
 
     /**
      * 작물 정보 수정 (이미지 포함)
