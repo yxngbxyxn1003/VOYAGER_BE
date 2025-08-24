@@ -69,13 +69,51 @@ public class CropService {
     }
 
     /**
-     * 사용자의 작물 목록 조회
+     * 사용자의 작물 목록 조회 (엔티티 직접 반환)
      */
     @Transactional(readOnly = true)
     public List<Crop> getUserCrops(User user) {
         return cropRepository.findByUserOrderByCreatedAtDesc(user);
     }
-    
+
+    /**
+     * 홈 화면용 사용자 작물 목록 조회 (DTO 변환하여 반환)
+     */
+    @Transactional(readOnly = true)
+    public List<com.planty.dto.crop.HomeCropDto> getHomeCrops(User user) {
+        return getUserCrops(user).stream()
+                .map(this::convertToHomeCropDto)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Crop 엔티티를 HomeCropDto로 변환
+     */
+    private com.planty.dto.crop.HomeCropDto convertToHomeCropDto(Crop crop) {
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        
+        // 카테고리명 추출 (안전하게 처리)
+        String categoryName = "기타";
+        try {
+            if (crop.getCategories() != null && !crop.getCategories().isEmpty()) {
+                categoryName = crop.getCategories().get(0).getCategoryName();
+            }
+        } catch (Exception e) {
+            log.warn("카테고리 정보 추출 실패 - Crop ID: {}, Error: {}", crop.getId(), e.getMessage());
+            categoryName = "기타";
+        }
+        
+        return new com.planty.dto.crop.HomeCropDto(
+                crop.getId(),
+                crop.getName(),
+                crop.getCropImg(),
+                crop.getStartAt() != null ? crop.getStartAt().format(formatter) : null,
+                crop.getEndAt() != null ? crop.getEndAt().format(formatter) : null,
+                crop.getIsRegistered(),
+                crop.getAnalysisStatus() != null ? crop.getAnalysisStatus().name() : null,
+                categoryName
+        );
+    }
 
     /**
      * 작물 상세 정보 조회
@@ -153,40 +191,7 @@ public class CropService {
         return updatedCrop;
     }
 
-    /**
-     * 홈 화면용 사용자 작물 목록 조회 (등록된 작물만)
-     */
-    @Transactional(readOnly = true)
-    public List<com.planty.dto.crop.HomeCropDto> getHomeCrops(User user) {
-        List<Crop> crops = cropRepository.findByUserAndIsRegisteredTrueOrderByCreatedAtDesc(user);
-        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        return crops.stream()
-                .map(crop -> {
-                    // 카테고리명 추출 (안전하게 처리)
-                    String categoryName = "기타";
-                    try {
-                        if (crop.getCategories() != null && !crop.getCategories().isEmpty()) {
-                            categoryName = crop.getCategories().get(0).getCategoryName();
-                        }
-                    } catch (Exception e) {
-                        log.warn("카테고리 정보 추출 실패 - Crop ID: {}, Error: {}", crop.getId(), e.getMessage());
-                        categoryName = "기타";
-                    }
-                    
-                    return new com.planty.dto.crop.HomeCropDto(
-                            crop.getId(),
-                            crop.getName(),
-                            crop.getCropImg(),
-                            crop.getStartAt() != null ? crop.getStartAt().format(formatter) : null,
-                            crop.getEndAt() != null ? crop.getEndAt().format(formatter) : null,
-                            crop.getIsRegistered(),
-                            crop.getAnalysisStatus() != null ? crop.getAnalysisStatus().name() : null,
-                            categoryName
-                    );
-                })
-                .collect(java.util.stream.Collectors.toList());
-    }
 
     /**
      * 작물 삭제
@@ -307,3 +312,4 @@ public class CropService {
         return updatedCrop;
     }
 }
+
