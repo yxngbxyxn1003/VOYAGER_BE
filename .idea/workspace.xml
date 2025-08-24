@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ae24eeda-e1e7-47d2-8525-14d67eecac53" name="변경" comment="" />
+    <list default="true" id="ae24eeda-e1e7-47d2-8525-14d67eecac53" name="변경" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/controller/chat/ChatController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/controller/chat/ChatController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/dto/chat/ChatDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/chat/ChatDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/chat/ChatService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/chat/ChatService.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

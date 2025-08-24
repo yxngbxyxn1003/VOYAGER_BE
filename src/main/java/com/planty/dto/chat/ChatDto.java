@@ -14,6 +14,6 @@ import java.util.List;
 @AllArgsConstructor
 public class ChatDto {
     private Long chatId;
-    private List<Integer> participantIds;
+    private Integer sellerId;
 }
 
