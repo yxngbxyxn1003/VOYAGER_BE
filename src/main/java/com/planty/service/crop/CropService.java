@@ -319,16 +319,14 @@ public class CropService {
     }
 
     public List<HomeCropDto> getHomeCrop(Integer userId){
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "NOT_FOUND"));
-        return cropRepository.findByUserOrderByCreatedAtDesc(user)
-                .stream()
-                .map(HomeCropDto::of)
-                .map(dto->{
-                    dto.setCropImg(imageUrlMapper.toPublic(dto.getCropImg()));
-                    return dto;
-          })
-                .toList();
-
+        List<Crop> crops = cropRepository.findByUser_IdAndHarvestTrueOrderByCreatedAtDesc(userId);
+        return crops.stream()
+        .map(HomeCropDto::of)
+        .map(dto->{
+            dto.setCropImg(imageUrlMapper.toPublic(dto.getCropImg()));
+            return dto;
+        })
+        .toList();
     }
 
 

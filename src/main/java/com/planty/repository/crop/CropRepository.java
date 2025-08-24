@@ -30,4 +30,7 @@ public interface CropRepository extends JpaRepository<Crop, Integer> {
 
     // 재배 완료된 작물 불러오기
     List<Crop> findByUser_IdAndHarvestTrueOrderByCreatedAtDesc(Integer userId);
+
+    // 재배 중인 작물 불러오기
+    List<Crop> findByUser_IdAndHarvestFalseOrderByCreatedAtDesc(Integer userId);
 }
