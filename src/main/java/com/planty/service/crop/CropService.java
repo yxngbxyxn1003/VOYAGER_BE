@@ -20,6 +20,12 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import com.planty.entity.diary.Diary;
+import com.planty.entity.diary.DiaryImage;
+import com.planty.repository.diary.DiaryRepository;
+
 
 @Slf4j
 @Service
@@ -32,88 +38,52 @@ public class CropService {
     private final CropDiagnosisAnalysisService diagnosisAnalysisService;
     private final UserRepository userRepository;
     private final ImageUrlMapper imageUrlMapper;
-
+    private final DiaryRepository diaryRepository;
+ 
     /**
-     * 통합 작물 등록: 작물 정보와 이미지를 한 번에 입력받아 AI 재배방법 분석 시작
-     * 사용자가 작물 이름, 재배 시작/종료 날짜, 이미지를 모두 입력하면 즉시 분석을 시작합니다.
+     * 작물 이미지 업로드 및 분석 시작 (기존 방식 - 호환성 유지)
      */
-    public Crop registerCropWithImage(User user, CropRegistrationDto dto) throws IOException {
-        log.info("CropService.registerCropWithImage 시작 - 사용자: {}, 파일: {}", 
-                user.getId(), dto.getImageFile() != null ? dto.getImageFile().getOriginalFilename() : "이미지 없음");
-        
-        // 1. 이미지 파일 저장 (이미지가 null만 아니면 모든 이미지 허용)
-        String savedImagePath = null;
-        if (dto.getImageFile() != null) {
-            savedImagePath = registrationAnalysisService.saveImageFile(dto.getImageFile());
-            log.info("이미지 파일 저장 완료: {}", savedImagePath);
-        } else {
-            log.info("이미지 파일이 null임");
-        }
-        
-        // 2. 작물 엔티티 생성 및 저장 (분석 중 상태로 시작)
+    public Crop uploadCropImage(User user, MultipartFile imageFile) throws IOException {
+        // 1. 이미지 파일 저장
+        String savedImagePath = registrationAnalysisService.saveImageFile(imageFile);
+
+        // 2. 작물 엔티티 생성 (분석 대기 상태)
         Crop crop = new Crop();
         crop.setUser(user);
-        crop.setName(dto.getName());
-        crop.setStartAt(dto.getStartAt());
-        crop.setEndAt(dto.getEndAt());
         crop.setCropImg(savedImagePath);
-        crop.setAnalysisStatus(AnalysisStatus.ANALYZING);
+        crop.setAnalysisStatus(AnalysisStatus.PENDING);
         crop.setIsRegistered(false);
         crop.setHarvest(false);
-        
+
         Crop savedCrop = cropRepository.save(crop);
-        
-        // 3. 이미지가 있는 경우에만 AI 분석 시작
-        if (savedImagePath != null) {
-            registrationAnalysisService.analyzeImageAsync(savedCrop.getId(), savedImagePath);
-            log.info("작물 등록 및 AI 분석 시작: Crop ID {}, Name: {}, 분석 상태: {}", 
-                    savedCrop.getId(), savedCrop.getName(), savedCrop.getAnalysisStatus());
-        } else {
-            log.info("작물 등록 완료 (이미지 없음): Crop ID {}, Name: {}", 
-                    savedCrop.getId(), savedCrop.getName());
-        }
-        
+
+        // 3. 비동기로 재배방법 분석 시작
+        registrationAnalysisService.analyzeImageAsync(savedCrop.getId(), savedImagePath);
+
         return savedCrop;
     }
 
-
     /**
-     * 홈 화면용 사용자 작물 목록 조회 (DTO 변환하여 반환)
+     * 사용자의 작물 목록 조회
      */
     @Transactional(readOnly = true)
-    public List<com.planty.dto.crop.HomeCropDto> getHomeCrops(User user) {
-        return getUserCrops(user).stream()
-                .map(this::convertToHomeCropDto)
-                .collect(java.util.stream.Collectors.toList());
+    public List<Crop> getUserCrops(User user) {
+        return cropRepository.findByUserOrderByCreatedAtDesc(user);
     }
 
     /**
-     * Crop 엔티티를 HomeCropDto로 변환
+     * 홈 화면용 작물 목록 조회
      */
-    private com.planty.dto.crop.HomeCropDto convertToHomeCropDto(Crop crop) {
-        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        
-        // 카테고리명 추출 (안전하게 처리)
-        String categoryName = "기타";
-        try {
-            if (crop.getCategories() != null && !crop.getCategories().isEmpty()) {
-                categoryName = crop.getCategories().get(0).getCategoryName();
-            }
-        } catch (Exception e) {
-            log.warn("카테고리 정보 추출 실패 - Crop ID: {}, Error: {}", crop.getId(), e.getMessage());
-            categoryName = "기타";
-        }
-        
-        return new com.planty.dto.crop.HomeCropDto(
-                crop.getId(),
-                crop.getName(),
-                crop.getCropImg(),
-                crop.getStartAt() != null ? crop.getStartAt().format(formatter) : null,
-                crop.getEndAt() != null ? crop.getEndAt().format(formatter) : null,
-                crop.getIsRegistered(),
-                crop.getAnalysisStatus() != null ? crop.getAnalysisStatus().name() : null,
-                categoryName
-        );
+    @Transactional(readOnly = true)
+    public List<HomeCropDto> getHomeCrop(Integer userId) {
+        List<Crop> crops = cropRepository.findByUser_IdAndHarvestFalseOrderByCreatedAtDesc(userId);
+        return crops.stream()
+                .map(HomeCropDto::of)
+                .map(dto -> {
+                    dto.setCropImg(imageUrlMapper.toPublic(dto.getCropImg()));
+                    return dto;
+                })
+                .toList();
     }
 
     /**
@@ -125,33 +95,6 @@ public class CropService {
                 .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
     }
 
-//
-//    /**
-//     * 홈 화면용 사용자 작물 목록 조회 (등록된 것과 미등록된 것 모두)
-//     */
-//    @Transactional(readOnly = true)
-//    public List<HomeCropDto> getHomeCrops(User user) {
-//        List<Crop> crops = cropRepository.findByUserOrderByCreatedAtDesc(user);
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일");
-//
-//        return crops.stream()
-//                .map(crop -> {
-//                    HomeCropDto dto = new HomeCropDto();
-//                    dto.setId(crop.getId());
-//                    dto.setName(crop.getName() != null ? crop.getName() : "분석 중인 작물");
-//                    dto.setCropImg(crop.getCropImg());
-//                    dto.setPlantingDate(crop.getStartAt() != null ?
-//                        crop.getStartAt().format(formatter) :
-//                        "재배 시작일 미입력");
-//                    dto.setIsRegistered(crop.getIsRegistered());
-//                    dto.setAnalysisStatus(crop.getAnalysisStatus().toString());
-//                    dto.setCropCategory(crop.getCropCategory() != null ?
-//                        crop.getCropCategory().toString() : "미분류");
-//                    return dto;
-//                })
-//                .collect(Collectors.toList());
-//    }
-//
 
     /**
      * 작물 태그별 진단 분석 (현재상태, 질병여부, 품질/시장성)
@@ -179,35 +122,41 @@ public class CropService {
     }
 
     /**
-     * AI 분석 완료 후 작물 등록 완료 처리
-     * 분석이 완료된 작물을 최종 등록 상태로 변경합니다.
+     * 최종 등록: 분석 결과와 텍스트 데이터를 DB에 저장
      */
-    public Crop completeCropRegistration(Integer cropId, User user) {
+    public Crop finalizeCropRegistration(User user, Map<String, Object> finalData) {
         try {
-            Crop crop = cropRepository.findById(cropId)
-                    .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
+            // 임시 작물 ID 추출
+            Integer tempCropId = (Integer) finalData.get("tempCropId");
+            if (tempCropId == null) {
+                throw new IllegalArgumentException("임시 작물 ID가 없습니다.");
+            }
+
+            // 임시 작물 조회
+            Crop tempCrop = cropRepository.findById(tempCropId)
+                    .orElseThrow(() -> new IllegalArgumentException("임시 작물을 찾을 수 없습니다."));
 
             // 권한 확인
-            if (!crop.getUser().getId().equals(user.getId())) {
+            if (!tempCrop.getUser().getId().equals(user.getId())) {
                 throw new IllegalArgumentException("권한이 없습니다.");
             }
 
             // 분석이 완료되지 않은 경우
-            if (crop.getAnalysisStatus() != AnalysisStatus.COMPLETED) {
-                throw new IllegalArgumentException("AI 분석이 완료되지 않았습니다. 잠시 후 다시 시도해주세요.");
+            if (tempCrop.getAnalysisStatus() != AnalysisStatus.COMPLETED) {
+                throw new IllegalArgumentException("이미지 분석이 완료되지 않았습니다.");
             }
 
             // 최종 등록 완료 처리
-            crop.setIsRegistered(true);
-            Crop finalCrop = cropRepository.save(crop);
+            tempCrop.setIsRegistered(true);
+            Crop finalCrop = cropRepository.save(tempCrop);
 
-            log.info("작물 등록 완료: Crop ID {}, Name: {}", finalCrop.getId(), finalCrop.getName());
+            log.info("작물 최종 등록 완료: Crop ID {}", finalCrop.getId());
 
             return finalCrop;
 
         } catch (Exception e) {
-            log.error("작물 등록 완료 처리 중 오류 발생", e);
-            throw new RuntimeException("작물 등록 완료에 실패했습니다: " + e.getMessage());
+            log.error("최종 등록 중 오류 발생", e);
+            throw new RuntimeException("최종 등록에 실패했습니다: " + e.getMessage());
         }
     }
 
@@ -236,8 +185,6 @@ public class CropService {
         return updatedCrop;
     }
 
-
-
     /**
      * 작물 삭제
      */
@@ -265,53 +212,6 @@ public class CropService {
         cropRepository.delete(crop);
         log.info("작물 삭제 완료: Crop ID {}", cropId);
     }
-
-    /**
-     * 작물 정보 수정
-     */
-    public Crop updateCrop(Integer cropId, User user, CropRegistrationDto updateDto) {
-        Crop crop = cropRepository.findById(cropId)
-                .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
-
-        // 권한 확인
-        if (!crop.getUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("수정 권한이 없습니다.");
-        }
-
-        // 등록된 작물만 수정 가능
-        if (!crop.getIsRegistered()) {
-            throw new IllegalArgumentException("등록되지 않은 작물은 수정할 수 없습니다.");
-        }
-
-        // 작물 정보 업데이트
-        if (updateDto.getName() != null) {
-            crop.setName(updateDto.getName());
-        }
-        if (updateDto.getStartAt() != null) {
-            crop.setStartAt(updateDto.getStartAt());
-        }
-        if (updateDto.getEndAt() != null) {
-            crop.setEndAt(updateDto.getEndAt());
-        }
-
-        Crop updatedCrop = cropRepository.save(crop);
-        log.info("작물 정보 수정 완료: Crop ID {}", cropId);
-
-        return updatedCrop;
-    }
-
-    public List<HomeCropDto> getHomeCrop(Integer userId){
-        List<Crop> crops = cropRepository.findByUser_IdAndHarvestTrueOrderByCreatedAtDesc(userId);
-        return crops.stream()
-        .map(HomeCropDto::of)
-        .map(dto->{
-            dto.setCropImg(imageUrlMapper.toPublic(dto.getCropImg()));
-            return dto;
-        })
-        .toList();
-    }
-
-
 
 
     /**
@@ -369,6 +269,58 @@ public class CropService {
         log.info("작물 정보 수정 완료 (이미지 포함): Crop ID {}", cropId);
 
         return updatedCrop;
+    }
+
+    /**
+     * 작물과 같은 종류의 재배일지 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getCropDiariesByCategory(Integer cropId, Integer userId) {
+        Crop crop = cropRepository.findById(cropId)
+                .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
+
+        // 작물의 카테고리 정보 가져오기
+        List<String> cropCategories = crop.getCategories().stream()
+                .map(category -> category.getCategoryName())
+                .toList();
+
+        if (cropCategories.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 같은 카테고리의 작물들을 가진 재배일지 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        
+        List<Diary> diaries = diaryRepository.findByUserAndCropNameInOrderByCreatedAtDesc(user, cropCategories);
+
+        return diaries.stream()
+                .map(diary -> {
+                    Map<String, Object> diaryInfo = new LinkedHashMap<>();
+                    diaryInfo.put("diaryId", diary.getId());
+                    diaryInfo.put("title", diary.getTitle());
+                    diaryInfo.put("content", diary.getContent());
+                    diaryInfo.put("cropName", diary.getCrop().getName());
+                    diaryInfo.put("createdAt", diary.getCreatedAt());
+                    diaryInfo.put("modifiedAt", diary.getModifiedAt());
+                    
+                    // 썸네일 이미지 찾기
+                    String thumbnailImage = diary.getImages().stream()
+                            .filter(DiaryImage::getThumbnail)
+                            .map(DiaryImage::getDiaryImg)
+                            .findFirst()
+                            .orElse(null);
+                    diaryInfo.put("thumbnailImage", thumbnailImage);
+                    
+                    // 전체 이미지 목록
+                    List<String> images = diary.getImages().stream()
+                            .map(DiaryImage::getDiaryImg)
+                            .toList();
+                    diaryInfo.put("images", images);
+                    
+                    return diaryInfo;
+                })
+                .toList();
     }
 }
 
