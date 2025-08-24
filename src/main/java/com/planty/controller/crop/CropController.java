@@ -305,13 +305,14 @@ public class CropController {
     }
 
     /**
-     * 작물 태그별 진단 실행 (기존 이미지 사용)
+     * 작물 태그별 진단 실행 (새 이미지 업로드)
      */
-    @PostMapping(value = "/{cropId}/diagnosis/{analysisType}")
+    @PostMapping(value = "/{cropId}/diagnosis/{analysisType}/with-image")
     @ResponseBody
-    public ResponseEntity<CropDetailAnalysisResult> analyzeCropDiagnosis(
+    public ResponseEntity<CropDetailAnalysisResult> analyzeCropDiagnosisWithNewImage(
             @PathVariable Integer cropId,
             @PathVariable String analysisType,
+            @RequestParam("newImage") MultipartFile newImage,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         try {
@@ -345,13 +346,13 @@ public class CropController {
                     .body(new CropDetailAnalysisResult(false, "잘못된 진단 타입입니다.", analysisTypeEnum));
             }
 
-            // 기존 이미지로 진단 수행
-            CropDetailAnalysisResult result = cropService.analyzeCropDetail(crop, analysisTypeEnum);
+            // 새 이미지로 진단 수행
+            CropDetailAnalysisResult result = cropService.analyzeCropDetailWithNewImage(crop, analysisTypeEnum, newImage);
 
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
-            log.error("작물 진단 실패", e);
+            log.error("새 이미지로 작물 진단 실패", e);
             return ResponseEntity.badRequest()
                 .body(new CropDetailAnalysisResult(false, "진단에 실패했습니다: " + e.getMessage(), null));
         }
