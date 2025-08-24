@@ -52,6 +52,26 @@ public class CropController {
     }
 
     /**
+     * 홈 화면용 작물 목록 조회 (등록된 것과 미등록된 것 모두)
+     */
+    @GetMapping("/home-crops")
+    @ResponseBody
+    public ResponseEntity<List<com.planty.dto.crop.HomeCropDto>> getHomeCrops(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        try {
+            User user = userService.findById(userDetails.getId());
+            List<com.planty.dto.crop.HomeCropDto> homeCrops = cropService.getHomeCrops(user);
+            
+            return ResponseEntity.ok(homeCrops);
+            
+        } catch (Exception e) {
+            log.error("홈 화면 작물 목록 조회 실패", e);
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    /**
      * 간단한 이미지 업로드 테스트용 엔드포인트
      */
     @PostMapping(value = "/test-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -487,11 +507,14 @@ public class CropController {
             CropRegistrationDto updateDto = null;
             if (cropDataJson != null && !cropDataJson.isBlank()) {
                 ObjectMapper objectMapper = new ObjectMapper();
+                // LocalDate 지원을 위한 모듈 등록 (필수!)
+                objectMapper.findAndRegisterModules();
+                objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
                 updateDto = objectMapper.readValue(cropDataJson, CropRegistrationDto.class);
             }
             
-            // 이미지 파일이 있는 경우 이미지 업데이트
-            if (imageFile != null && !imageFile.isEmpty()) {
+            // 이미지 파일이 있는 경우 이미지 업데이트 (null만 아니면 모든 이미지 허용)
+            if (imageFile != null) {
                 // 이미지 파일 검증 없이 모든 파일 허용
             }
             

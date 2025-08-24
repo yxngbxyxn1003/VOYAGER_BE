@@ -12,6 +12,7 @@ public class HomeCropDto {
     private String name;
     private String cropImg;
     private String plantingDate;
+    private String endDate;  // 수확예정일 필드 추가
     private Boolean isRegistered;
     private String analysisStatus;
     private String cropCategory;

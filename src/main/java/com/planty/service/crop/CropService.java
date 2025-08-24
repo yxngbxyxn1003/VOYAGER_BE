@@ -31,11 +31,16 @@ public class CropService {
      */
     public Crop registerCropWithImage(User user, CropRegistrationDto dto) throws IOException {
         log.info("CropService.registerCropWithImage 시작 - 사용자: {}, 파일: {}", 
-                user.getId(), dto.getImageFile().getOriginalFilename());
+                user.getId(), dto.getImageFile() != null ? dto.getImageFile().getOriginalFilename() : "이미지 없음");
         
-        // 1. 이미지 파일 저장
-        String savedImagePath = registrationAnalysisService.saveImageFile(dto.getImageFile());
-        log.info("이미지 파일 저장 완료: {}", savedImagePath);
+        // 1. 이미지 파일 저장 (이미지가 null만 아니면 모든 이미지 허용)
+        String savedImagePath = null;
+        if (dto.getImageFile() != null) {
+            savedImagePath = registrationAnalysisService.saveImageFile(dto.getImageFile());
+            log.info("이미지 파일 저장 완료: {}", savedImagePath);
+        } else {
+            log.info("이미지 파일이 null임");
+        }
         
         // 2. 작물 엔티티 생성 및 저장 (분석 중 상태로 시작)
         Crop crop = new Crop();
@@ -50,11 +55,15 @@ public class CropService {
         
         Crop savedCrop = cropRepository.save(crop);
         
-        // 3. 비동기로 AI 재배방법 분석 시작
-        registrationAnalysisService.analyzeImageAsync(savedCrop.getId(), savedImagePath);
-        
-        log.info("작물 등록 및 AI 분석 시작: Crop ID {}, Name: {}, 분석 상태: {}", 
-                savedCrop.getId(), savedCrop.getName(), savedCrop.getAnalysisStatus());
+        // 3. 이미지가 있는 경우에만 AI 분석 시작
+        if (savedImagePath != null) {
+            registrationAnalysisService.analyzeImageAsync(savedCrop.getId(), savedImagePath);
+            log.info("작물 등록 및 AI 분석 시작: Crop ID {}, Name: {}, 분석 상태: {}", 
+                    savedCrop.getId(), savedCrop.getName(), savedCrop.getAnalysisStatus());
+        } else {
+            log.info("작물 등록 완료 (이미지 없음): Crop ID {}, Name: {}", 
+                    savedCrop.getId(), savedCrop.getName());
+        }
         
         return savedCrop;
     }
@@ -66,15 +75,8 @@ public class CropService {
     public List<Crop> getUserCrops(User user) {
         return cropRepository.findByUserOrderByCreatedAtDesc(user);
     }
-//
-//    /**
-//     * 사용자의 등록된 작물 목록 조회
-//     */
-//    @Transactional(readOnly = true)
-//    public List<Crop> getUserRegisteredCrops(User user) {
-//        return cropRepository.findByUserAndIsRegisteredTrueOrderByCreatedAtDesc(user);
-//    }
-//
+    
+
     /**
      * 작물 상세 정보 조회
      */
@@ -83,62 +85,7 @@ public class CropService {
         return cropRepository.findById(cropId)
                 .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
     }
-//
 
-//
-//    /**
-//     * 작물 삭제
-//     */
-//    public void deleteCrop(Integer cropId, User user) {
-//        Crop crop = cropRepository.findById(cropId)
-//                .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
-//
-//        // 권한 확인
-//        if (!crop.getUser().getId().equals(user.getId())) {
-//            throw new IllegalArgumentException("삭제 권한이 없습니다.");
-//        }
-//
-//        // 이미지 파일 삭제
-//        if (crop.getCropImg() != null) {
-//            try {
-//                File imageFile = new File(crop.getCropImg());
-//                if (imageFile.exists()) {
-//                    imageFile.delete();
-//                }
-//            } catch (Exception e) {
-//                log.warn("이미지 파일 삭제 실패: {}", crop.getCropImg(), e);
-//            }
-//        }
-//
-//        cropRepository.delete(crop);
-//    }
-//
-//    /**
-//     * 홈 화면용 사용자 작물 목록 조회 (등록된 것과 미등록된 것 모두)
-//     */
-//    @Transactional(readOnly = true)
-//    public List<HomeCropDto> getHomeCrops(User user) {
-//        List<Crop> crops = cropRepository.findByUserOrderByCreatedAtDesc(user);
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일");
-//
-//        return crops.stream()
-//                .map(crop -> {
-//                    HomeCropDto dto = new HomeCropDto();
-//                    dto.setId(crop.getId());
-//                    dto.setName(crop.getName() != null ? crop.getName() : "분석 중인 작물");
-//                    dto.setCropImg(crop.getCropImg());
-//                    dto.setPlantingDate(crop.getStartAt() != null ?
-//                        crop.getStartAt().format(formatter) :
-//                        "재배 시작일 미입력");
-//                    dto.setIsRegistered(crop.getIsRegistered());
-//                    dto.setAnalysisStatus(crop.getAnalysisStatus().toString());
-//                    dto.setCropCategory(crop.getCropCategory() != null ?
-//                        crop.getCropCategory().toString() : "미분류");
-//                    return dto;
-//                })
-//                .collect(Collectors.toList());
-//    }
-//
     /**
      * 작물 태그별 진단 분석 (현재상태, 질병여부, 품질/시장성)
      */
@@ -204,6 +151,41 @@ public class CropService {
         log.info("작물 재배 완료 상태 변경: Crop ID {}, Harvest Status: {}", cropId, harvestStatus);
 
         return updatedCrop;
+    }
+
+    /**
+     * 홈 화면용 사용자 작물 목록 조회 (등록된 작물만)
+     */
+    @Transactional(readOnly = true)
+    public List<com.planty.dto.crop.HomeCropDto> getHomeCrops(User user) {
+        List<Crop> crops = cropRepository.findByUserAndIsRegisteredTrueOrderByCreatedAtDesc(user);
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        return crops.stream()
+                .map(crop -> {
+                    // 카테고리명 추출 (안전하게 처리)
+                    String categoryName = "기타";
+                    try {
+                        if (crop.getCategories() != null && !crop.getCategories().isEmpty()) {
+                            categoryName = crop.getCategories().get(0).getCategoryName();
+                        }
+                    } catch (Exception e) {
+                        log.warn("카테고리 정보 추출 실패 - Crop ID: {}, Error: {}", crop.getId(), e.getMessage());
+                        categoryName = "기타";
+                    }
+                    
+                    return new com.planty.dto.crop.HomeCropDto(
+                            crop.getId(),
+                            crop.getName(),
+                            crop.getCropImg(),
+                            crop.getStartAt() != null ? crop.getStartAt().format(formatter) : null,
+                            crop.getEndAt() != null ? crop.getEndAt().format(formatter) : null,
+                            crop.getIsRegistered(),
+                            crop.getAnalysisStatus() != null ? crop.getAnalysisStatus().name() : null,
+                            categoryName
+                    );
+                })
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**
