@@ -4,6 +4,8 @@ import com.planty.entity.diary.Diary;
 import com.planty.entity.user.User;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,4 +29,20 @@ public interface DiaryRepository extends JpaRepository<Diary, Integer> {
     // 사용자별 재배일지 목록 조회 (같은 분류 작물만)
     @EntityGraph(attributePaths = {"crop", "images"})
     List<Diary> findByUserAndCropNameInOrderByCreatedAtDesc(User user, List<String> cropNames);
+    
+    // 카테고리 기반으로 재배일지 검색 (JPQL 사용)
+    @Query("SELECT d FROM Diary d " +
+           "JOIN d.crop c " +
+           "JOIN c.categories cat " +
+           "WHERE d.user = :user " +
+           "AND cat.categoryName IN :categoryNames " +
+           "ORDER BY d.createdAt DESC")
+    List<Diary> findByUserAndCropCategoriesOrderByCreatedAtDesc(
+        @Param("user") User user, 
+        @Param("categoryNames") List<String> categoryNames
+    );
+    
+    // 사용자별로 특정 작물 이름의 재배일지 검색
+    @EntityGraph(attributePaths = {"crop", "images"})
+    List<Diary> findByUserAndCrop_NameOrderByCreatedAtDesc(User user, String cropName);
 }
