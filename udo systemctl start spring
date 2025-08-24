@@ -1,0 +1,18 @@
+○ spring.service - Spring Boot App
+     Loaded: loaded (/etc/systemd/system/spring.service; enabled; preset: disabled)
+     Active: inactive (dead) since Sun 2025-08-24 14:08:18 KST; 4s ago
+   Duration: 2.967s
+    Process: 224483 ExecStart=/srv/app/app/run.sh (code=exited, status=143)
+   Main PID: 224483 (code=exited, status=143)
+        CPU: 5.797s
+
+Aug 24 14:08:17 ip-10-0-1-170.ap-northeast-2.compute.internal run.sh[224483]:  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+Aug 24 14:08:17 ip-10-0-1-170.ap-northeast-2.compute.internal run.sh[224483]:   '  |____| .__|_| |_|_| |_\__, | / / / /
+Aug 24 14:08:17 ip-10-0-1-170.ap-northeast-2.compute.internal run.sh[224483]:  =========|_|==============|___/=/_/_/_/
+Aug 24 14:08:17 ip-10-0-1-170.ap-northeast-2.compute.internal run.sh[224483]:  :: Spring Boot ::                (v3.4.3)
+Aug 24 14:08:17 ip-10-0-1-170.ap-northeast-2.compute.internal run.sh[224483]: 2025-08-24T14:08:17.728+09:00  INFO 224483 --- [Centralthon] [           main] com.planty.PlantyApplication             : Starting PlantyApplication v0.0.1-SNAPSHOT using Java 17.0.15 with PID 224483 (/srv/app/app/build/libs/VOYAGER_BE-0.0.1-SNAPSHOT.jar started by ec2-user in /srv/app/app)
+Aug 24 14:08:17 ip-10-0-1-170.ap-northeast-2.compute.internal run.sh[224483]: 2025-08-24T14:08:17.740+09:00  INFO 224483 --- [Centralthon] [           main] com.planty.PlantyApplication             : No active profile set, falling back to 1 default profile: "default"
+Aug 24 14:08:18 ip-10-0-1-170.ap-northeast-2.compute.internal systemd[1]: Stopping spring.service - Spring Boot App...
+Aug 24 14:08:18 ip-10-0-1-170.ap-northeast-2.compute.internal systemd[1]: spring.service: Deactivated successfully.
+Aug 24 14:08:18 ip-10-0-1-170.ap-northeast-2.compute.internal systemd[1]: Stopped spring.service - Spring Boot App.
+Aug 24 14:08:18 ip-10-0-1-170.ap-northeast-2.compute.internal systemd[1]: spring.service: Consumed 5.797s CPU time.
