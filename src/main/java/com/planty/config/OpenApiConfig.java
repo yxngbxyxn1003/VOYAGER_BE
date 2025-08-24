@@ -57,29 +57,30 @@ public class OpenApiConfig {
     @Getter @Setter
     public static class CropRegistration {
         private String model = "gpt-4o-mini";
-        private int maxTokens = 1000;
+        private int maxTokens = 8000; // 1000 → 8000으로 대폭 증가
         private double temperature = 0.1; // 일관된 결과를 위해 낮은 값
         private String systemPrompt = """
-            당신은 농업 전문가입니다. 작물 이미지를 분석하여 정확한 작물 정보와 재배 방법을 제공해주세요.
+            당신은 농업 전문가입니다. 작물 이미지를 분석하여 정확하고 상세한 작물 정보와 재배 방법을 제공해주세요.
             응답은 반드시 JSON 형식으로만 제공하고, 추가적인 설명은 포함하지 마세요.
+            모든 정보는 가능한 한 구체적이고 실용적으로 작성해주세요.
             """;
         private String userPromptTemplate = """
             이 이미지의 작물을 분석해주세요. 다음 정보를 JSON 형태로 제공해주세요:
             1. 작물 이름 (cropName)
-            2. 재배 환경 (environment) - 실내/실외/온실 등
-            3. 적정 온도 (temperature) - 구체적인 온도 범위
-            4. 예상 높이 (height) - 성장 후 예상 크기
-            5. 키우는 방법 (howTo) - 핵심적인 재배 가이드 (5줄 이내)
+            2. 재배 환경 (environment) - 실내/실외/온실 등 구체적인 환경 조건
+            3. 적정 온도 (temperature) - 구체적인 온도 범위와 계절별 관리법
+            4. 예상 높이 (height) - 성장 후 예상 크기와 성장 단계별 높이
+            5. 키우는 방법 (howTo) - 상세하고 실용적인 재배 가이드 (씨뿌리기부터 수확까지)
 
-            **중요: 재배 방법(howTo)은 5줄 이내로 간결하게 작성해주세요.**
+            **중요: 각 필드는 충분히 상세하고 구체적으로 작성해주세요. 재배 방법은 단계별로 자세히 설명해주세요.**
 
             응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:
             {
               "cropName": "작물이름",
-              "environment": "재배환경",
-              "temperature": "적정온도",
-              "height": "예상높이",
-              "howTo": "핵심적인 재배 방법 (5줄 이내)"
+              "environment": "재배환경 (구체적인 환경 조건 포함)",
+              "temperature": "적정온도 (계절별 관리법 포함)",
+              "height": "예상높이 (성장 단계별 정보 포함)",
+              "howTo": "상세한 재배 방법 (씨뿌리기부터 수확까지 단계별 설명)"
             }
             """;
     }
@@ -87,53 +88,53 @@ public class OpenApiConfig {
     @Getter @Setter
     public static class CropDiagnosis {
         private String model = "gpt-4o"; // 더 정확한 진단을 위해 상위 모델 사용
-        private int maxTokens = 1500;
+        private int maxTokens = 12000; // 1500 → 12000으로 대폭 증가
         private double temperature = 0.2;
         
         // 현재 상태 진단 프롬프트
         private String currentStatusPrompt = """
             이 작물 이미지를 분석하여 현재 상태를 종합적으로 평가해주세요.
-            전체적인 성장 상태, 건강도, 발달 정도 등을 포괄적으로 요약하여 JSON 형태로 제공해주세요.
+            전체적인 성장 상태, 건강도, 발달 정도, 잎의 상태, 줄기의 상태, 뿌리 상태 등을 포괄적으로 분석하여 JSON 형태로 제공해주세요.
             
-            **중요: 각 분석 내용은 10줄 이내로 간결하게 작성해주세요.**
+            **중요: 각 분석 내용은 충분히 상세하고 구체적으로 작성해주세요. 전문적인 관점에서 종합적인 평가를 제공해주세요.**
             
             응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:
             {
-              "currentStatusSummary": "현재 상태 종합 분석 내용 (10줄 이내)"
+              "currentStatusSummary": "현재 상태 종합 분석 내용 (성장 단계, 건강도, 발달 정도, 잎/줄기/뿌리 상태 등 상세 분석)"
             }
             """;
         
         // 질병 진단 프롬프트
         private String diseaseCheckPrompt = """
             이 작물 이미지를 분석하여 질병 여부를 진단해주세요.
-            병충해 감염 여부, 구체적인 질병명, 예방 및 치료 방법을 JSON 형태로 제공해주세요.
+            병충해 감염 여부, 구체적인 질병명, 증상, 원인, 예방 및 치료 방법, 약물 사용법 등을 상세히 분석하여 JSON 형태로 제공해주세요.
             
-            **중요: 각 분석 내용은 10줄 이내로 간결하게 작성해주세요.**
+            **중요: 각 분석 내용은 충분히 상세하고 구체적으로 작성해주세요. 전문적인 진단과 치료 방안을 제시해주세요.**
             
             응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:
             {
-              "diseaseStatus": "질병 상태 (건강함/경미한 질병/심각한 질병 등) (10줄 이내)",
-              "diseaseDetails": "발견된 질병이나 문제점 상세 설명 (10줄 이내)",
-              "preventionMethods": "예방 및 치료 방법 (10줄 이내)"
+              "diseaseStatus": "질병 상태 (건강함/경미한 질병/심각한 질병 등) 상세 분석",
+              "diseaseDetails": "발견된 질병이나 문제점 상세 설명 (증상, 원인, 진행 단계 등)",
+              "preventionMethods": "예방 및 치료 방법 (약물 사용법, 환경 관리법, 생물학적 방제법 등)"
             }
             """;
         
         // 품질/시장성 분석 프롬프트
         private String qualityMarketPrompt = """
             이 작물 이미지를 분석하여 품질과 시장성을 평가해주세요.
-            출하시 상품 비율, 색상 품질, 맛과 저장성, 운송 저항성 등을 JSON 형태로 제공해주세요.
+            출하시 상품 비율, 색상 품질, 맛과 저장성, 운송 저항성, 시장 가격, 소비자 선호도 등을 종합적으로 분석하여 JSON 형태로 제공해주세요.
             
-            **중요: 각 분석 내용은 10줄 이내로 간결하게 작성해주세요.**
+            **중요: 각 분석 내용은 충분히 상세하고 구체적으로 작성해주세요. 시장성과 경제적 가치를 종합적으로 평가해주세요.**
             
             응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:
             {
-              "marketRatio": "출하시 상품 비율 평가 (10줄 이내)",
-              "colorUniformity": "색 균일도 평가 (10줄 이내)",
-              "saturation": "채도 평가 (10줄 이내)",
-              "brightness": "명도 평가 (10줄 이내)",
-              "tasteStorage": "맛과 저장성 평가 (10줄 이내)",
-              "transportResistance": "운송 저장 중 손상 저항성 평가 (10줄 이내)",
-              "storageEvaluation": "저장성 종합 평가 (10줄 이내)"
+              "marketRatio": "출하시 상품 비율 평가 (등급별 분류, 품질 기준 등 상세 분석)",
+              "colorUniformity": "색 균일도 평가 (색상 분포, 균일성, 시각적 매력도 등)",
+              "saturation": "채도 평가 (색의 선명도, 생동감, 품질 지표 등)",
+              "brightness": "명도 평가 (밝기, 신선도, 성숙도 등)",
+              "tasteStorage": "맛과 저장성 평가 (맛의 품질, 저장 조건, 유통기한 등)",
+              "transportResistance": "운송 저장 중 손상 저항성 평가 (포장 방법, 운송 조건, 보관 방법 등)",
+              "storageEvaluation": "저장성 종합 평가 (저장 환경, 온도/습도 관리, 품질 유지 기간 등)"
             }
             """;
     }
