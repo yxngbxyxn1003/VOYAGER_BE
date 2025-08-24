@@ -567,4 +567,10 @@ public class CropController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
+    @GetMapping("/home-harvest")
+    @ResponseBody
+    public ResponseEntity<List<HomeCropDto>> getHome(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(cropService.getHomeCrop(userDetails.getId()));
+    }
 }
