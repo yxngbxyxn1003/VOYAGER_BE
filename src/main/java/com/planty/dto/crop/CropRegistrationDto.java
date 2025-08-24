@@ -3,6 +3,7 @@ package com.planty.dto.crop;
 import com.planty.entity.crop.AnalysisStatus;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 
@@ -19,5 +20,4 @@ public class CropRegistrationDto {
     private AnalysisStatus analysisStatus;
     private Boolean isRegistered;
     private String cropImg;
-    // MultipartFile 필드 제거 - JSON 직렬화 문제 해결
 }

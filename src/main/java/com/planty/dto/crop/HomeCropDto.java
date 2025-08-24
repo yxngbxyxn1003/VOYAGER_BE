@@ -27,6 +27,7 @@ public class HomeCropDto {
     private String cropImg;
     private LocalDate plantingDate;
     private LocalDate endAt;
+
     private Boolean isRegistered;
     private AnalysisStatus analysisStatus;
     private List<CropCategory> cropCategory;

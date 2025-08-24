@@ -1,0 +1,125 @@
+{
+  "groups": [
+    {
+      "name": "ai",
+      "type": "com.planty.config.OpenApiConfig",
+      "sourceType": "com.planty.config.OpenApiConfig"
+    },
+    {
+      "name": "ai.crop-diagnosis",
+      "type": "com.planty.config.OpenApiConfig$CropDiagnosis",
+      "sourceType": "com.planty.config.OpenApiConfig",
+      "sourceMethod": "getCropDiagnosis()"
+    },
+    {
+      "name": "ai.crop-registration",
+      "type": "com.planty.config.OpenApiConfig$CropRegistration",
+      "sourceType": "com.planty.config.OpenApiConfig",
+      "sourceMethod": "getCropRegistration()"
+    },
+    {
+      "name": "ai.openai",
+      "type": "com.planty.config.OpenApiConfig$OpenAI",
+      "sourceType": "com.planty.config.OpenApiConfig",
+      "sourceMethod": "getOpenai()"
+    }
+  ],
+  "properties": [
+    {
+      "name": "ai.api-key",
+      "type": "java.lang.String",
+      "sourceType": "com.planty.config.OpenApiConfig"
+    },
+    {
+      "name": "ai.crop-diagnosis.current-status-prompt",
+      "type": "java.lang.String",
+      "sourceType": "com.planty.config.OpenApiConfig$CropDiagnosis",
+      "defaultValue": "이 작물 이미지를 분석하여 현재 상태를 종합적으로 평가해주세요.\n전체적인 성장 상태, 건강도, 발달 정도 등을 포괄적으로 요약하여 JSON 형태로 제공해주세요.\n\n**중요: 각 분석 내용은 10줄 이내로 간결하게 작성해주세요.**\n\n응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:\n{\n  \"currentStatusSummary\": \"현재 상태 종합 분석 내용 (10줄 이내)\"\n}\n"
+    },
+    {
+      "name": "ai.crop-diagnosis.disease-check-prompt",
+      "type": "java.lang.String",
+      "sourceType": "com.planty.config.OpenApiConfig$CropDiagnosis",
+      "defaultValue": "이 작물 이미지를 분석하여 질병 여부를 진단해주세요.\n병충해 감염 여부, 구체적인 질병명, 예방 및 치료 방법을 JSON 형태로 제공해주세요.\n\n**중요: 각 분석 내용은 10줄 이내로 간결하게 작성해주세요.**\n\n응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:\n{\n  \"diseaseStatus\": \"질병 상태 (건강함\/경미한 질병\/심각한 질병 등) (10줄 이내)\",\n  \"diseaseDetails\": \"발견된 질병이나 문제점 상세 설명 (10줄 이내)\",\n  \"preventionMethods\": \"예방 및 치료 방법 (10줄 이내)\"\n}\n"
+    },
+    {
+      "name": "ai.crop-diagnosis.max-tokens",
+      "type": "java.lang.Integer",
+      "sourceType": "com.planty.config.OpenApiConfig$CropDiagnosis",
+      "defaultValue": 1500
+    },
+    {
+      "name": "ai.crop-diagnosis.model",
+      "type": "java.lang.String",
+      "sourceType": "com.planty.config.OpenApiConfig$CropDiagnosis",
+      "defaultValue": "gpt-4o"
+    },
+    {
+      "name": "ai.crop-diagnosis.quality-market-prompt",
+      "type": "java.lang.String",
+      "sourceType": "com.planty.config.OpenApiConfig$CropDiagnosis",
+      "defaultValue": "이 작물 이미지를 분석하여 품질과 시장성을 평가해주세요.\n출하시 상품 비율, 색상 품질, 맛과 저장성, 운송 저항성 등을 JSON 형태로 제공해주세요.\n\n**중요: 각 분석 내용은 10줄 이내로 간결하게 작성해주세요.**\n\n응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:\n{\n  \"marketRatio\": \"출하시 상품 비율 평가 (10줄 이내)\",\n  \"colorUniformity\": \"색 균일도 평가 (10줄 이내)\",\n  \"saturation\": \"채도 평가 (10줄 이내)\",\n  \"brightness\": \"명도 평가 (10줄 이내)\",\n  \"tasteStorage\": \"맛과 저장성 평가 (10줄 이내)\",\n  \"transportResistance\": \"운송 저장 중 손상 저항성 평가 (10줄 이내)\",\n  \"storageEvaluation\": \"저장성 종합 평가 (10줄 이내)\"\n}\n"
+    },
+    {
+      "name": "ai.crop-diagnosis.temperature",
+      "type": "java.lang.Double",
+      "sourceType": "com.planty.config.OpenApiConfig$CropDiagnosis",
+      "defaultValue": 0.2
+    },
+    {
+      "name": "ai.crop-registration.max-tokens",
+      "type": "java.lang.Integer",
+      "sourceType": "com.planty.config.OpenApiConfig$CropRegistration",
+      "defaultValue": 1000
+    },
+    {
+      "name": "ai.crop-registration.model",
+      "type": "java.lang.String",
+      "sourceType": "com.planty.config.OpenApiConfig$CropRegistration",
+      "defaultValue": "gpt-4o-mini"
+    },
+    {
+      "name": "ai.crop-registration.system-prompt",
+      "type": "java.lang.String",
+      "sourceType": "com.planty.config.OpenApiConfig$CropRegistration",
+      "defaultValue": "당신은 농업 전문가입니다. 작물 이미지를 분석하여 정확한 작물 정보와 재배 방법을 제공해주세요.\n응답은 반드시 JSON 형식으로만 제공하고, 추가적인 설명은 포함하지 마세요.\n"
+    },
+    {
+      "name": "ai.crop-registration.temperature",
+      "type": "java.lang.Double",
+      "sourceType": "com.planty.config.OpenApiConfig$CropRegistration",
+      "defaultValue": 0.1
+    },
+    {
+      "name": "ai.crop-registration.user-prompt-template",
+      "type": "java.lang.String",
+      "sourceType": "com.planty.config.OpenApiConfig$CropRegistration",
+      "defaultValue": "이 이미지의 작물을 분석해주세요. 다음 정보를 JSON 형태로 제공해주세요:\n1. 작물 이름 (cropName)\n2. 재배 환경 (environment) - 실내\/실외\/온실 등\n3. 적정 온도 (temperature) - 구체적인 온도 범위\n4. 예상 높이 (height) - 성장 후 예상 크기\n5. 키우는 방법 (howTo) - 핵심적인 재배 가이드 (5줄 이내)\n\n**중요: 재배 방법(howTo)은 5줄 이내로 간결하게 작성해주세요.**\n\n응답은 반드시 다음과 같은 JSON 형식으로만 답변해주세요:\n{\n  \"cropName\": \"작물이름\",\n  \"environment\": \"재배환경\",\n  \"temperature\": \"적정온도\",\n  \"height\": \"예상높이\",\n  \"howTo\": \"핵심적인 재배 방법 (5줄 이내)\"\n}\n"
+    },
+    {
+      "name": "ai.openai.base-url",
+      "type": "java.lang.String",
+      "sourceType": "com.planty.config.OpenApiConfig$OpenAI",
+      "defaultValue": "https:\/\/api.openai.com\/v1"
+    },
+    {
+      "name": "ai.openai.enable-logging",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.planty.config.OpenApiConfig$OpenAI",
+      "defaultValue": false
+    },
+    {
+      "name": "ai.openai.max-retries",
+      "type": "java.lang.Integer",
+      "sourceType": "com.planty.config.OpenApiConfig$OpenAI",
+      "defaultValue": 3
+    },
+    {
+      "name": "ai.openai.timeout",
+      "type": "java.lang.Integer",
+      "sourceType": "com.planty.config.OpenApiConfig$OpenAI",
+      "defaultValue": 60
+    }
+  ],
+  "hints": []
+}
