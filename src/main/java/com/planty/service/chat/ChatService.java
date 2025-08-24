@@ -24,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -38,21 +39,34 @@ public class ChatService {
     // 채팅 시작
     @Transactional
     public ChatDto startChat(Integer userId, Integer sellerId) {
-        Chat chat = new Chat();
-        chat.setCreatedAt(LocalDateTime.now());
-        chat.setModifiedAt(LocalDateTime.now());
-        chatRepository.save(chat);
+        Optional<Chat> existingChat = chatUserRepository.findExistingChatBetweenUsers(userId, sellerId);
+        Chat chat;
+        if (existingChat.isPresent()) {
+            chat = existingChat.get();
+        } else {
+            chat = new Chat();
+            chat.setCreatedAt(LocalDateTime.now());
+            chat.setModifiedAt(LocalDateTime.now());
+            chatRepository.save(chat);
 
-        if (userId == null || sellerId == null) {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
-            ChatUser cu = new ChatUser();
-            cu.setChat(chat);
-            cu.setUser(user);
-            chatUserRepository.save(cu);
+            User seller = userRepository.findById(sellerId)
+                    .orElseThrow(() -> new RuntimeException("Seller not found"));
+
+            ChatUser cu1 = new ChatUser();
+            cu1.setChat(chat);
+            cu1.setUser(user);
+
+            ChatUser cu2 = new ChatUser();
+            cu2.setChat(chat);
+            cu2.setUser(seller);
+
+            chatUserRepository.save(cu1);
+            chatUserRepository.save(cu2);
         }
 
-        return new ChatDto(chat.getId(), sellerId);
+        return new ChatDto(chat);
     }
 
     // 채팅 기록 조회
