@@ -6,6 +6,32 @@
   <component name="ChangeListManager">
     <list default="true" id="ae24eeda-e1e7-47d2-8525-14d67eecac53" name="변경" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/META-INF/spring-configuration-metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/META-INF/spring-configuration-metadata.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/config/CustomAuthenticationEntryPoint.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/config/CustomAuthenticationEntryPoint.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/chat/ChatController.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/chat/ChatController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/crop/CropController.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/crop/CropController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/diary/DiaryController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/dto/board/BoardSellCropsResDto$BoardSellCropsResDtoBuilder.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/dto/board/BoardSellCropsResDto$BoardSellCropsResDtoBuilder.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/dto/board/BoardSellCropsResDto.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/dto/board/BoardSellCropsResDto.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/dto/chat/SendMessageRequest.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/dto/chat/SendMessageRequest.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/dto/crop/CropAnalysisResult.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/dto/crop/CropDetailAnalysisResult.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/dto/crop/CropRegistrationDto.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/dto/crop/HomeCropDto.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/entity/crop/AnalysisType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/entity/crop/Crop.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/entity/crop/Crop.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/entity/crop/CropCategory.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/entity/crop/CropCategory.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/entity/diary/DiaryImage.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/entity/diary/DiaryImage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/repository/crop/CropRepository.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/repository/crop/CropRepository.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/crop/CropDiagnosisAnalysisService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/crop/CropRegistrationAnalysisService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/crop/CropService.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/crop/CropService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/openai/OpenAIService$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/openai/OpenAIService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/generated/sources/annotaionProcessor/java/com/planty/entity/diary/QDiaryImage.java" beforeDir="false" afterPath="$PROJECT_DIR$/build/generated/sources/annotaionProcessor/java/com/planty/entity/diary/QDiaryImage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/dto/board/BoardSellCropsResDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/board/BoardSellCropsResDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/dto/crop/HomeCropDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/crop/HomeCropDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/entity/crop/Crop.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/entity/crop/Crop.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

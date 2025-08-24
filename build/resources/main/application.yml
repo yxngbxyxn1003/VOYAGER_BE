@@ -26,20 +26,12 @@ spring:
       max-file-size: 10MB
       max-request-size: 20MB
 
-  # Jackson 날짜 포맷 설정
-  jackson:
-    date-format: yyyy-MM-dd
-    time-zone: Asia/Seoul
-    serialization:
-      write-dates-as-timestamps: false
-
 logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.orm.jdbc.bind: TRACE
     org.hibernate.orm.jdbc.extract: TRACE
     org.hibernate.type: TRACE
-    com.planty: DEBUG  # 애플리케이션 로그 레벨 추가
 
 # JWT 설정 (env에서 불러오기)
 jwt:
