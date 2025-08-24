@@ -305,13 +305,14 @@ public class CropController {
     }
 
     /**
-     * 작물 태그별 진단 실행 (기존 이미지 사용)
+     * 작물 태그별 진단 실행 (새 이미지 업로드)
      */
     @PostMapping(value = "/{cropId}/diagnosis/{analysisType}")
     @ResponseBody
     public ResponseEntity<CropDetailAnalysisResult> analyzeCropDiagnosis(
             @PathVariable Integer cropId,
             @PathVariable String analysisType,
+            @RequestParam("Image") MultipartFile newImage,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         try {
@@ -345,8 +346,8 @@ public class CropController {
                     .body(new CropDetailAnalysisResult(false, "잘못된 진단 타입입니다.", analysisTypeEnum));
             }
 
-            // 기존 이미지로 진단 수행
-            CropDetailAnalysisResult result = cropService.analyzeCropDetail(crop, analysisTypeEnum);
+            // 새 이미지로 진단 수행
+            CropDetailAnalysisResult result = cropService.analyzeCropDetailWithNewImage(crop, analysisTypeEnum, newImage);
 
             return ResponseEntity.ok(result);
 
@@ -501,6 +502,7 @@ public class CropController {
             CropRegistrationDto updateDto = null;
             if (cropDataJson != null && !cropDataJson.isBlank()) {
                 ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.findAndRegisterModules(); // Java 8 Date/Time 모듈 등록
                 updateDto = objectMapper.readValue(cropDataJson, CropRegistrationDto.class);
             }
             

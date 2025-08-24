@@ -96,10 +96,25 @@ public class CropService {
 
 
     /**
-     * 작물 태그별 진단 분석 (현재상태, 질병여부, 품질/시장성)
+     * 새 이미지로 작물 태그별 진단 분석
      */
-    public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetail(Crop crop, com.planty.entity.crop.AnalysisType analysisType) {
-        return diagnosisAnalysisService.analyzeCropDetail(crop, analysisType);
+    public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetailWithNewImage(Crop crop, com.planty.entity.crop.AnalysisType analysisType, MultipartFile newImage) throws IOException {
+        // 새 이미지 파일 저장
+        String savedImagePath = registrationAnalysisService.saveImageFile(newImage);
+        log.info("새 이미지 파일 저장 완료: {}", savedImagePath);
+        
+        // 새 이미지 경로로 임시 Crop 객체 생성하여 진단 분석 수행
+        Crop tempCrop = new Crop();
+        tempCrop.setId(crop.getId());
+        tempCrop.setCropImg(savedImagePath);
+        tempCrop.setName(crop.getName());
+        tempCrop.setUser(crop.getUser());
+        
+        log.info("새 이미지로 진단 분석 시작 - 작물 ID: {}, 분석 타입: {}, 새 이미지 경로: {}", 
+                crop.getId(), analysisType, savedImagePath);
+        
+        // 새 이미지로 진단 분석 수행
+        return diagnosisAnalysisService.analyzeCropDetail(tempCrop, analysisType);
     }
 
     /**
@@ -260,27 +275,21 @@ public class CropService {
     }
 
     /**
-     * 작물과 같은 종류의 재배일지 목록 조회
+     * 작물과 관련된 재배일지 목록 조회 (직접 작물 ID로 조회)
      */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getCropDiariesByCategory(Integer cropId, Integer userId) {
         Crop crop = cropRepository.findById(cropId)
                 .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
 
-        // 작물의 카테고리 정보 가져오기
-        List<String> cropCategories = crop.getCategories().stream()
-                .map(category -> category.getCategoryName())
-                .toList();
-
-        if (cropCategories.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        // 같은 카테고리의 작물들을 가진 재배일지 조회
+        // 사용자 정보 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
         
-        List<Diary> diaries = diaryRepository.findByUserAndCropNameInOrderByCreatedAtDesc(user, cropCategories);
+        // 해당 작물 ID로 직접 재배일지 조회 (카테고리 필터링 제거)
+        List<Diary> diaries = diaryRepository.findByCropIdOrderByCreatedAtDesc(cropId);
+        
+        log.info("작물 ID {}에 대한 재배일지 수: {}", cropId, diaries.size());
 
         return diaries.stream()
                 .map(diary -> {
@@ -288,7 +297,7 @@ public class CropService {
                     diaryInfo.put("diaryId", diary.getId());
                     diaryInfo.put("title", diary.getTitle());
                     diaryInfo.put("content", diary.getContent());
-                    diaryInfo.put("cropName", diary.getCrop().getName());
+                    diaryInfo.put("cropName", diary.getCrop() != null ? diary.getCrop().getName() : "알 수 없음");
                     diaryInfo.put("createdAt", diary.getCreatedAt());
                     diaryInfo.put("modifiedAt", diary.getModifiedAt());
                     
