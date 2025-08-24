@@ -33,6 +33,8 @@ public class DiaryController {
     private final StorageService storageService;
 
     // 재배일지 작성용 사용자 작물 목록 조회
+    // 이제 CropController의 /api/crop/home-crops를 사용합니다
+    /*
     @GetMapping("/crops")
     public ResponseEntity<List<HomeCropDto>> getUserCrops(
             @AuthenticationPrincipal CustomUserDetails me
@@ -43,6 +45,7 @@ public class DiaryController {
         // 사용자 작물 목록 반환
         return ResponseEntity.ok(diaryService.getUserCrops(me.getId()));
     }
+    */
 
     // 재배일지 등록 (JSON+파일)
     @PostMapping(value="/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
