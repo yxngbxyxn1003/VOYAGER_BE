@@ -41,88 +41,23 @@ public class CropController {
      */
     @GetMapping("")
     public ResponseEntity<List<HomeCropDto>> getHomeCrop(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<HomeCropDto> crops = cropService.getHomeCrop(userDetails.getId());
-        return ResponseEntity.ok(crops);
+        return ResponseEntity.ok(cropService.getHomeCrop(userDetails.getId()));
     }
 
     /**
-     * 간단한 이미지 업로드 테스트용 엔드포인트
+     * 작물 상세정보 조회 (홈에서 작물 클릭 시)
      */
-    @PostMapping(value = "/test-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @GetMapping("/{cropId}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> testImageUpload(
-            @RequestParam("imageFile") MultipartFile imageFile) {
-
-        Map<String, Object> response = new LinkedHashMap<>();
-
-        try {
-            // 파일 검증
-            if (imageFile == null || imageFile.isEmpty()) {
-                response.put("success", false);
-                response.put("message", "이미지 파일이 필요합니다.");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            // 파일 정보 로깅
-            log.info("업로드된 파일 정보:");
-            log.info("원본 파일명: {}", imageFile.getOriginalFilename());
-            log.info("파일 크기: {} bytes", imageFile.getSize());
-            log.info("Content-Type: {}", imageFile.getContentType());
-
-            // 로컬 개발용 업로드 경로
-            String uploadPath = System.getProperty("user.dir") + "/uploads/test";
-            File uploadDir = new File(uploadPath);
-            if (!uploadDir.exists()) {
-                uploadDir.mkdirs();
-            }
-            
-            // 배포용 경로 (주석처리)
-            /*
-            // 실제 업로드 경로로 저장 테스트
-            String uploadPath = "/home/ec2-user/planty/uploads/test";
-            File uploadDir = new File(uploadPath);
-            if (!uploadDir.exists()) {
-                uploadDir.mkdirs();
-            }
-            */
-            
-            String fileName = "test_" + System.currentTimeMillis() + "_" + imageFile.getOriginalFilename();
-            File uploadFile = new File(uploadDir, fileName);
-            
-            imageFile.transferTo(uploadFile);
-            
-            response.put("success", true);
-            response.put("message", "이미지 업로드 테스트 성공");
-            response.put("filePath", uploadFile.getAbsolutePath());
-            response.put("fileSize", imageFile.getSize());
-            response.put("originalFilename", imageFile.getOriginalFilename());
-            
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            log.error("이미지 업로드 테스트 실패", e);
-            response.put("success", false);
-            response.put("message", "이미지 업로드 테스트 실패: " + e.getMessage());
-            response.put("error", e.getClass().getSimpleName());
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-
-    /**
-     * 2단계: 임시 등록된 작물에 이미지 업로드 및 AI 분석
-     */
-    @PostMapping("/{cropId}/upload-image")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> uploadImageToExistingCrop(
+    public ResponseEntity<Map<String, Object>> getCropDetail(
             @PathVariable Integer cropId,
-            @RequestParam("imageFile") MultipartFile imageFile,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Map<String, Object> response = new LinkedHashMap<>();
 
         try {
             User user = userService.findById(userDetails.getId());
-            Crop crop = cropService.uploadCropImageToExisting(cropId, imageFile);
+            Crop crop = cropService.getCropById(cropId);
 
             // 권한 확인
             if (!crop.getUser().getId().equals(user.getId())) {
@@ -131,20 +66,37 @@ public class CropController {
                 return ResponseEntity.status(403).body(response);
             }
 
+            // 작물 상세정보
+            Map<String, Object> cropInfo = new LinkedHashMap<>();
+            cropInfo.put("id", crop.getId());
+            cropInfo.put("name", crop.getName());
+            cropInfo.put("cropImg", crop.getCropImg());
+            cropInfo.put("startAt", crop.getStartAt());
+            cropInfo.put("endAt", crop.getEndAt());
+            cropInfo.put("environment", crop.getEnvironment());
+            cropInfo.put("temperature", crop.getTemperature());
+            cropInfo.put("height", crop.getHeight());
+            cropInfo.put("howTo", crop.getHowTo());
+            cropInfo.put("analysisStatus", crop.getAnalysisStatus().toString());
+            cropInfo.put("isRegistered", crop.getIsRegistered());
+            cropInfo.put("harvest", crop.getHarvest());
+            cropInfo.put("createdAt", crop.getCreatedAt());
+            cropInfo.put("modifiedAt", crop.getModifiedAt());
+
+            // 같은 종류 작물의 재배일지 목록 조회
+            List<Map<String, Object>> cropDiaries = cropService.getCropDiariesByCategory(cropId, user.getId());
+
             response.put("success", true);
-            response.put("message", "업로드 및 분석 시작");
-            response.put("data", Map.of(
-                "cropId", crop.getId(),
-                "analysisStatus", crop.getAnalysisStatus().toString(),
-                "cropImg", crop.getCropImg()
-            ));
+            response.put("crop", cropInfo);
+            response.put("diaries", cropDiaries);
+            response.put("message", "작물 상세정보 조회 성공");
 
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("이미지 업로드 실패", e);
+            log.error("작물 상세정보 조회 실패", e);
             response.put("success", false);
-            response.put("message", "이미지 업로드에 실패했습니다: " + e.getMessage());
+            response.put("message", "작물 상세정보 조회에 실패했습니다: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
@@ -185,34 +137,6 @@ public class CropController {
                 return ResponseEntity.badRequest().body(errorResponse);
             }
             
-            // 이미지 파일 검증
-            if (imageFile == null || imageFile.isEmpty()) {
-                return ResponseEntity.badRequest()
-                    .body(Map.of(
-                        "success", false,
-                        "message", "이미지 파일이 필요합니다."
-                    ));
-            }
-
-            // 파일 크기 검증 (10MB 제한)
-            if (imageFile.getSize() > 10 * 1024 * 1024) {
-                return ResponseEntity.badRequest()
-                    .body(Map.of(
-                        "success", false,
-                        "message", "이미지 파일 크기는 10MB 이하여야 합니다."
-                    ));
-            }
-
-            // 파일 형식 검증
-            String contentType = imageFile.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                return ResponseEntity.badRequest()
-                    .body(Map.of(
-                        "success", false,
-                        "message", "이미지 파일만 업로드 가능합니다."
-                    ));
-            }
-
             // 텍스트 데이터와 이미지를 한 번에 처리하여 재배방법 분석 결과 반환
             Map<String, Object> analysisResult = cropService.analyzeCropWithData(user, cropData, imageFile);
 
@@ -268,39 +192,6 @@ public class CropController {
             log.error("최종 등록 실패", e);
             response.put("success", false);
             response.put("message", "최종 등록에 실패했습니다: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-
-    /**
-     * 기존 방식: 작물 이미지 업로드 (호환성 유지)
-     */
-    @PostMapping("/upload")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> uploadCropImage(
-            @RequestParam("imageFile") MultipartFile imageFile,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-
-        Map<String, Object> response = new LinkedHashMap<>();
-
-        try {
-            User user = userService.findById(userDetails.getId());
-            Crop crop = cropService.uploadCropImage(user, imageFile);
-
-            response.put("success", true);
-            response.put("message", "업로드 및 분석 시작");
-            response.put("data", Map.of(
-                "cropId", crop.getId(),
-                "analysisStatus", crop.getAnalysisStatus().toString(),
-                "cropImg", crop.getCropImg()
-            ));
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            log.error("이미지 업로드 실패", e);
-            response.put("success", false);
-            response.put("message", "이미지 업로드에 실패했습니다: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
@@ -407,49 +298,6 @@ public class CropController {
             response.put("success", false);
             response.put("message", "정보 조회에 실패했습니다: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
-        }
-    }
-
-    /**
-     * 작물 태그별 진단 실행 (기존 이미지 사용)
-     */
-    @PostMapping("/analyze-diagnosis")
-    @ResponseBody
-    public ResponseEntity<CropDetailAnalysisResult> analyzeCropDiagnosis(
-            @RequestBody CropDiagnosisRequestDto request,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-
-        try {
-            User user = userService.findById(userDetails.getId());
-            Crop crop = cropService.getCropById(request.getCropId());
-
-            // 권한 확인
-            if (!crop.getUser().getId().equals(user.getId())) {
-                return ResponseEntity.status(403)
-                    .body(new CropDetailAnalysisResult(false, "권한이 없습니다.", request.getAnalysisType()));
-            }
-
-            // 등록된 작물만 진단 가능
-            if (!crop.getIsRegistered()) {
-                return ResponseEntity.badRequest()
-                    .body(new CropDetailAnalysisResult(false, "등록되지 않은 작물은 진단할 수 없습니다.", request.getAnalysisType()));
-            }
-
-            // 진단 분석 타입인지 확인
-            if (!request.getAnalysisType().isDiagnosisAnalysis()) {
-                return ResponseEntity.badRequest()
-                    .body(new CropDetailAnalysisResult(false, "잘못된 진단 타입입니다.", request.getAnalysisType()));
-            }
-
-            // 태그별 진단 수행 (기존 이미지 사용)
-            CropDetailAnalysisResult result = cropService.analyzeCropDetail(crop, request.getAnalysisType());
-
-            return ResponseEntity.ok(result);
-
-        } catch (Exception e) {
-            log.error("작물 태그별 진단 실패", e);
-            return ResponseEntity.badRequest()
-                .body(new CropDetailAnalysisResult(false, "진단에 실패했습니다: " + e.getMessage(), request.getAnalysisType()));
         }
     }
 
