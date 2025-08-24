@@ -36,6 +36,7 @@ public class CropController {
 
     private final CropService cropService;
     private final UserService userService;
+    private final ObjectMapper objectMapper;
 
     /**
      * 작물 목록 페이지
@@ -122,9 +123,6 @@ public class CropController {
             log.info("JSON 길이: {} characters", cropDataJson.length());
             
             // JSON 문자열을 CropRegistrationDto로 변환
-            ObjectMapper objectMapper = new ObjectMapper();
-            // 날짜 형식 설정
-            objectMapper.findAndRegisterModules();
             CropRegistrationDto cropData;
             try {
                 cropData = objectMapper.readValue(cropDataJson, CropRegistrationDto.class);
@@ -501,7 +499,6 @@ public class CropController {
             // JSON 데이터 파싱
             CropRegistrationDto updateDto = null;
             if (cropDataJson != null && !cropDataJson.isBlank()) {
-                ObjectMapper objectMapper = new ObjectMapper();
                 updateDto = objectMapper.readValue(cropDataJson, CropRegistrationDto.class);
             }
             
