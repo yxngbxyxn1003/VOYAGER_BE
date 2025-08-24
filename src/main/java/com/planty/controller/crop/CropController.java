@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 @Slf4j
-@Controller
+@RestController
 @RequestMapping("/api/crop")
 @RequiredArgsConstructor
 public class CropController {
@@ -41,6 +41,7 @@ public class CropController {
      * 작물 목록 페이지
      */
     @GetMapping("")
+    @ResponseBody
     public ResponseEntity<List<HomeCropDto>> getHomeCrop(@AuthenticationPrincipal CustomUserDetails userDetails) {
         return ResponseEntity.ok(cropService.getHomeCrop(userDetails.getId()));
     }
@@ -100,7 +101,7 @@ public class CropController {
     /**
      * 새로운 통합 등록 방식: 텍스트 데이터와 이미지를 한 번에 받아서 재배방법 분석 후 결과 반환
      */
-    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/register")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> registerCropWithImage(
             @RequestPart("cropData") String cropDataJson,
@@ -300,7 +301,7 @@ public class CropController {
     /**
      * 작물 태그별 진단 실행 (새 이미지 업로드)
      */
-    @PostMapping(value = "/{cropId}/diagnosis/{analysisType}/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/{cropId}/diagnosis/{analysisType}/with-image")
     @ResponseBody
     public ResponseEntity<CropDetailAnalysisResult> analyzeCropDiagnosisWithNewImage(
             @PathVariable Integer cropId,
@@ -478,7 +479,7 @@ public class CropController {
     /**
      * 작물 정보 수정 (이름, 날짜, 이미지 포함)
      */
-    @PutMapping(value = "/{cropId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/{cropId}")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> updateCrop(
             @PathVariable Integer cropId,
@@ -566,5 +567,10 @@ public class CropController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-}
 
+    @GetMapping("/home-harvest")
+    @ResponseBody
+    public ResponseEntity<List<HomeCropDto>> getHome(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        return ResponseEntity.ok(cropService.getHomeCrop(userDetails.getId()));
+    }
+}

@@ -4,12 +4,10 @@ import com.planty.entity.diary.Diary;
 import com.planty.entity.diary.DiaryImage;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 
 // 판매 게시글 별 재배 일지
-@Getter @Setter
-@Builder
+@Getter @Builder
 public class BoardDiaryResDto {
     private Integer diaryId;
     private String title;

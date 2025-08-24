@@ -13,7 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -25,8 +25,8 @@ public class HomeCropDto {
     private Integer id;
     private String name;
     private String cropImg;
-    private LocalDate plantingDate;
-    private LocalDate endAt;
+    private LocalDateTime plantingDate;
+    private LocalDateTime endAt;
 
     private Boolean isRegistered;
     private AnalysisStatus analysisStatus;
@@ -44,7 +44,6 @@ public class HomeCropDto {
                 .analysisStatus(crop.getAnalysisStatus())
                 .cropCategory(crop.getCategories())
                 .build();
-
     }
 }
 
