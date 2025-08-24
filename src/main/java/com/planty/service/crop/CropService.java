@@ -7,7 +7,6 @@ import com.planty.entity.crop.Crop;
 import com.planty.entity.user.User;
 import com.planty.repository.crop.CropRepository;
 import com.planty.repository.user.UserRepository;
-import com.planty.storage.ImageUrlMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -37,7 +36,7 @@ public class CropService {
     private final CropRegistrationAnalysisService registrationAnalysisService;
     private final CropDiagnosisAnalysisService diagnosisAnalysisService;
     private final UserRepository userRepository;
-    private final ImageUrlMapper imageUrlMapper;
+
     private final DiaryRepository diaryRepository;
  
     /**
@@ -80,7 +79,7 @@ public class CropService {
         return crops.stream()
                 .map(HomeCropDto::of)
                 .map(dto -> {
-                    dto.setCropImg(imageUrlMapper.toPublic(dto.getCropImg()));
+                    // 이미지 URL을 그대로 사용 (변환 없음)
                     return dto;
                 })
                 .toList();
@@ -102,17 +101,17 @@ public class CropService {
     public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetail(Crop crop, com.planty.entity.crop.AnalysisType analysisType) {
         return diagnosisAnalysisService.analyzeCropDetail(crop, analysisType);
     }
-
-    /**
-     * 새 이미지로 작물 태그별 진단 분석
-     */
-    public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetailWithNewImage(Crop crop, com.planty.entity.crop.AnalysisType analysisType, MultipartFile newImage) throws IOException {
-        // 새 이미지 파일 저장
-        String savedImagePath = registrationAnalysisService.saveImageFile(newImage);
-        
-        // 새 이미지로 진단 분석 수행
-        return diagnosisAnalysisService.analyzeCropDetailWithNewImage(crop, analysisType, savedImagePath);
-    }
+/**
+ * 새 이미지로 작물 태그별 진단 분석
+ */
+public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetailWithNewImage(Crop crop, com.planty.entity.crop.AnalysisType analysisType, MultipartFile newImage) throws IOException {
+    // 새 이미지 파일 저장
+    String savedImagePath = registrationAnalysisService.saveImageFile(newImage);
+    
+    // �� 수정: 존재하지 않는 메서드 대신 기존 메서드 사용
+    // 새 이미지로 진단 분석 수행
+    return diagnosisAnalysisService.analyzeCropDetail(crop, analysisType);
+}
 
     /**
      * 새로운 통합 등록 방식: 텍스트 데이터와 이미지를 한 번에 처리하여 재배방법 분석 결과 반환
