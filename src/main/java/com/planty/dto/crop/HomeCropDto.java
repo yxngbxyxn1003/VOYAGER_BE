@@ -12,6 +12,7 @@ public class HomeCropDto {
     private String name;
     private String cropImg;
     private String plantingDate;
+    private String endDate;
     private Boolean isRegistered;
     private String analysisStatus;
     private String cropCategory;
