@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module version="4">
+  <component name="AdditionalModuleElements">
+    <content url="file://$MODULE_DIR$/../../build/generated/sources/annotaionProcessor/java">
+      <sourceFolder url="file://$MODULE_DIR$/../../build/generated/sources/annotaionProcessor/java" isTestSource="true" generated="true" />
+    </content>
+    <content url="file://$MODULE_DIR$/../../src/test" dumb="true">
+      <sourceFolder url="file://$MODULE_DIR$/../../src/test/java" isTestSource="true" />
+    </content>
+  </component>
+</module>
