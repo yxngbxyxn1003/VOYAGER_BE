@@ -24,8 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import com.planty.storage.ImageUrlMapper;
 
 // 마이페이지
 @Service
@@ -38,6 +37,7 @@ public class MypageService {
     private final CropRepository cropRepository;
     private final UserRepository userRepository;
     private final StorageService storageService;
+    private final ImageUrlMapper imageUrlMapper;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -53,31 +53,46 @@ public class MypageService {
                 .userId(user.getUserId())
                 .name(user.getNickname())
                 .point(user.getPoint())
-                .profileImg(user.getProfileImg())
+                .profileImg(imageUrlMapper.toPublic(user.getProfileImg()))
                 .build();
     }
 
     // 내가 쓴 판매 게시글 불러오기
     public List<MySellBoardResDto> getMySellBoard(Integer userId) {
-        // 내가 쓴 판매 게시글 중 판매 중인 게시글
         List<Board> boards = boardRepository.findMyBoardsOrderByStatusAndCreated(userId);
 
-        // DTO로 변환
         return boards.stream()
-                .map(MySellBoardResDto::of)
+                .map(MySellBoardResDto::of) // 1차 생성
+                .map(dto ->
+                        MySellBoardResDto.builder()
+                                .boardId(dto.getBoardId())
+                                .title(dto.getTitle())
+                                .price(dto.getPrice())
+                                .time(dto.getTime())
+                                .sell(dto.getSell())
+                                .thumbnailImg(imageUrlMapper.toPublic(dto.getThumbnailImg()))
+                                .build()
+                )
                 .toList();
     }
 
     // 내 재배 완료된 작물 불러오기
     public List<MyHarvestCropResDto> getMyHarvestCrop(Integer userId) {
-        // 내 재배 완료된 작물 엔티티
         List<Crop> crops = cropRepository.findByUser_IdAndHarvestTrueOrderByCreatedAtDesc(userId);
 
-        // DTO로 변환
         return crops.stream()
-                .map(MyHarvestCropResDto::of)
+                .map(MyHarvestCropResDto::of) // 1차 생성
+                .map(dto ->
+                        MyHarvestCropResDto.builder()
+                                .cropId(dto.getCropId())
+                                .name(dto.getName())
+                                .harvest(dto.getHarvest())
+                                .thumbnail(imageUrlMapper.toPublic(dto.getThumbnail()))
+                                .build()
+                )
                 .toList();
     }
+
 
     // 유저 프로필 수정
     @Transactional

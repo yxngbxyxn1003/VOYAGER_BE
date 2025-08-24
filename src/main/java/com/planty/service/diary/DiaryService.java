@@ -10,6 +10,7 @@ import com.planty.entity.user.User;
 import com.planty.repository.crop.CropRepository;
 import com.planty.repository.diary.DiaryRepository;
 import com.planty.repository.user.UserRepository;
+import com.planty.service.crop.CropService;
 import com.planty.storage.StorageService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +32,7 @@ public class DiaryService {
     private final DiaryRepository diaryRepository;
     private final UserRepository userRepository;
     private final CropRepository cropRepository;
+    private final CropService cropService;
     @SuppressWarnings("unused")
     private final StorageService storageService;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -107,12 +109,15 @@ public class DiaryService {
                             .map(category -> category.getCategoryName())
                             .orElse("기타");
                     
+                    // 디버깅을 위한 로그 추가
+                    System.out.println("Crop ID: " + crop.getId() + ", EndAt: " + crop.getEndAt());
+                    
                     return new HomeCropDto(
                             crop.getId(),
                             crop.getName(),
                             crop.getCropImg(),
                             crop.getStartAt() != null ? crop.getStartAt().toString() : null,
-                            crop.getEndAt() != null ? crop.getEndAt().toString() : null,  // endDate 매핑 추가
+                            crop.getEndAt() != null ? crop.getEndAt().toString() : null,
                             crop.getIsRegistered(),
                             crop.getAnalysisStatus() != null ? crop.getAnalysisStatus().name() : null,
                             categoryName
