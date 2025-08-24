@@ -116,6 +116,27 @@ public class CropService {
         // 새 이미지로 진단 분석 수행
         return diagnosisAnalysisService.analyzeCropDetail(tempCrop, analysisType);
     }
+/**
+ * 새 이미지로 작물 태그별 진단 분석
+ */
+public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetailWithNewImage(Crop crop, com.planty.entity.crop.AnalysisType analysisType, MultipartFile newImage) throws IOException {
+    // 새 이미지 파일 저장
+    String savedImagePath = registrationAnalysisService.saveImageFile(newImage);
+    log.info("새 이미지 파일 저장 완료: {}", savedImagePath);
+    
+    // 새 이미지 경로로 임시 Crop 객체 생성하여 진단 분석 수행
+    Crop tempCrop = new Crop();
+    tempCrop.setId(crop.getId());
+    tempCrop.setCropImg(savedImagePath);
+    tempCrop.setName(crop.getName());
+    tempCrop.setUser(crop.getUser());
+    
+    log.info("새 이미지로 진단 분석 시작 - 작물 ID: {}, 분석 타입: {}, 새 이미지 경로: {}", 
+            crop.getId(), analysisType, savedImagePath);
+    
+    // 새 이미지로 진단 분석 수행
+    return diagnosisAnalysisService.analyzeCropDetail(tempCrop, analysisType);
+}
 
     /**
      * 새로운 통합 등록 방식: 텍스트 데이터와 이미지를 한 번에 처리하여 재배방법 분석 결과 반환
