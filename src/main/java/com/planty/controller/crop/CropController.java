@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.http.MediaType;
@@ -43,12 +42,10 @@ public class CropController {
      * 작물 목록 페이지
      */
     @GetMapping
-    public String cropList(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
+    public ResponseEntity<List<Crop>> getCrops(@AuthenticationPrincipal CustomUserDetails userDetails) {
         User user = userService.findById(userDetails.getId());
         List<Crop> crops = cropService.getUserCrops(user);
-
-        model.addAttribute("crops", crops);
-        return "crop/crop-list";
+        return ResponseEntity.ok(crops);
     }
 
     /**
