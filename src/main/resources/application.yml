@@ -38,14 +38,7 @@ jwt:
   secret: ${JWT_SECRET}
   access-exp-millis: ${JWT_ACCESS_EXP_MILLIS:86400000}
 
-# Jackson 설정
-spring:
-  jackson:
-    serialization:
-      write-dates-as-timestamps: false
-    deserialization:
-      fail-on-unknown-properties: false
-    default-property-inclusion: non_null
+# Jackson 설정은 JacksonConfig에서 처리
 # 업로드 디렉토리
 upload-dir: ${APP_UPLOAD_DIR}
 
