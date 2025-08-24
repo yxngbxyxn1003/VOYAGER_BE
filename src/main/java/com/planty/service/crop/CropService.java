@@ -107,10 +107,20 @@ public class CropService {
 public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetailWithNewImage(Crop crop, com.planty.entity.crop.AnalysisType analysisType, MultipartFile newImage) throws IOException {
     // 새 이미지 파일 저장
     String savedImagePath = registrationAnalysisService.saveImageFile(newImage);
+    log.info("새 이미지 파일 저장 완료: {}", savedImagePath);
     
-    // �� 수정: 존재하지 않는 메서드 대신 기존 메서드 사용
+    // 새 이미지 경로로 임시 Crop 객체 생성하여 진단 분석 수행
+    Crop tempCrop = new Crop();
+    tempCrop.setId(crop.getId());
+    tempCrop.setCropImg(savedImagePath);
+    tempCrop.setName(crop.getName());
+    tempCrop.setUser(crop.getUser());
+    
+    log.info("새 이미지로 진단 분석 시작 - 작물 ID: {}, 분석 타입: {}, 새 이미지 경로: {}", 
+            crop.getId(), analysisType, savedImagePath);
+    
     // 새 이미지로 진단 분석 수행
-    return diagnosisAnalysisService.analyzeCropDetail(crop, analysisType);
+    return diagnosisAnalysisService.analyzeCropDetail(tempCrop, analysisType);
 }
 
     /**
