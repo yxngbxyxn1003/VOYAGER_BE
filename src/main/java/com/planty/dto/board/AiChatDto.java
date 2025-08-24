@@ -6,5 +6,5 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class AiChatDto {
-    private Long aichatId;
+    private Long id;
 }
