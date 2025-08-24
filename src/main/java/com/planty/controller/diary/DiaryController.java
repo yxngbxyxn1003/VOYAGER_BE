@@ -136,45 +136,33 @@ public class DiaryController {
     public ResponseEntity<?> updateDiary(
             @AuthenticationPrincipal CustomUserDetails me,
             @PathVariable Integer id,
-            @RequestPart("form") String formJson,  // JSON 문자열로 받기
+            @RequestPart("form") @Validated DiaryUpdateDto form,  // 수정할 재배일지 데이터
             @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages // 새로 추가할 이미지
     ) throws IOException {
         // 권한이 없을 때
         if (me == null) return ResponseEntity.status(401).build();
 
-        try {
-            // JSON 문자열을 DiaryUpdateDto로 변환
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.findAndRegisterModules(); // Java 8 Date/Time 모듈 등록
-            DiaryUpdateDto form = objectMapper.readValue(formJson, DiaryUpdateDto.class);
-            
-            // 새 이미지 개수 검증 (기존 이미지 + 새 이미지 ≤ 9개)
-            if (newImages != null && newImages.size() > 9) {
-                return ResponseEntity.badRequest()
-                        .body(new ApiSuccess(400, "새로 추가할 이미지는 최대 9개까지만 업로드할 수 있습니다."));
-            }
+        // 새 이미지 개수 검증 (기존 이미지 + 새 이미지 ≤ 9개)
+        if (newImages != null && newImages.size() > 9) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiSuccess(400, "새로 추가할 이미지는 최대 9개까지만 업로드할 수 있습니다."));
+        }
 
-            // 파일 저장 → URL 리스트 생성
-            List<String> newImageUrls = new ArrayList<>();
-            if (newImages != null) {
-                for (MultipartFile f : newImages) {
-                    if (!f.isEmpty()) {
-                        newImageUrls.add(storageService.save(f, "diary"));
-                    }
+        // 파일 저장 → URL 리스트 생성
+        List<String> newImageUrls = new ArrayList<>();
+        if (newImages != null) {
+            for (MultipartFile f : newImages) {
+                if (!f.isEmpty()) {
+                    newImageUrls.add(storageService.save(f, "diary"));
                 }
             }
-
-            // 서비스 호출
-            diaryService.updateDiary(id, me.getId(), form, newImageUrls);
-
-            // 성공 응답
-            return ResponseEntity.ok(new ApiSuccess(200, "재배일지가 성공적으로 수정되었습니다."));
-            
-        } catch (Exception e) {
-            // JSON 파싱 오류나 기타 오류 처리
-            return ResponseEntity.badRequest()
-                    .body(new ApiSuccess(400, "재배일지 데이터 형식이 올바르지 않습니다: " + e.getMessage()));
         }
+
+        // 서비스 호출
+        diaryService.updateDiary(id, me.getId(), form, newImageUrls);
+
+        // 성공 응답
+        return ResponseEntity.ok(new ApiSuccess(200, "재배일지가 성공적으로 수정되었습니다."));
     }
 
     // 재배일지 삭제
