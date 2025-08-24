@@ -48,8 +48,8 @@ public class ChatController {
     @PostMapping("/{chatId}/send")
     public ResponseEntity<ChatMessageDto> sendMessage(
             @PathVariable Long chatId,
-            @RequestBody SendMessageRequest request,
-            @AuthenticationPrincipal CustomUserDetails user
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody SendMessageRequest request
             ) {
         return ResponseEntity.ok(chatService.sendMessage(chatId, user.getId(), request.getContent()));
     }
@@ -80,9 +80,9 @@ public class ChatController {
     @PostMapping("/{chatId}/message")
     public ResponseEntity<ChatMessageDto> sendMessage(
             @PathVariable Long chatId,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam(required = false) String content,
-            @RequestParam(required = false) MultipartFile file,
-            @AuthenticationPrincipal CustomUserDetails user
+            @RequestParam(required = false) MultipartFile file
     ) throws IOException {
 
         String filePath = null;

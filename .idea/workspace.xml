@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="ae24eeda-e1e7-47d2-8525-14d67eecac53" name="변경" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/controller/crop/CropController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/controller/crop/CropController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/controller/diary/DiaryController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/controller/diary/DiaryController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/crop/CropService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/crop/CropService.java" afterDir="false" />
@@ -46,12 +47,12 @@
     &quot;assignee&quot;: &quot;yxngbxyxn1003&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/yxngbxyxn1003/VOYAGER_BE.git&quot;,
-    &quot;accountId&quot;: &quot;48381686-e77d-4a12-950e-b0a69058edcb&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/yxngbxyxn1003/VOYAGER_BE.git",
+    "accountId": "ae59fa3f-fee7-41d6-adb0-5456cd5ecd7c"
   }
-}</component>
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 2
 }</component>
@@ -63,6 +64,7 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
+
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;Gradle.Build VOYAGER_BE.executor&quot;: &quot;Run&quot;,
@@ -87,6 +89,7 @@
     &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
     &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;advanced.settings&quot;
+
   },
   &quot;keyToStringList&quot;: {
     &quot;com.intellij.ide.scratch.ScratchImplUtil$2/새 스크래치 파일&quot;: [
@@ -106,6 +109,14 @@
       </method>
     </configuration>
   </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-a94e463ab2e7-intellij.indexing.shared.core-IU-243.25659.59" />
+        <option value="bundled-js-predefined-d6986cc7102b-1632447f56bf-JavaScript-IU-243.25659.59" />
+      </set>
+    </attachedChunks>
+  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="애플리케이션 수준" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="디폴트 작업">
@@ -114,7 +125,11 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1754736053154</updated>
+      <workItem from="1756058628630" duration="1954000" />
     </task>
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
   </component>
 </project>
