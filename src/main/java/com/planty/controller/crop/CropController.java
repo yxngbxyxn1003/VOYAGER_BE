@@ -38,6 +38,7 @@ public class CropController {
 
     private final CropService cropService;
     private final UserService userService;
+    private final com.planty.service.crop.CropRegistrationAnalysisService cropRegistrationAnalysisService;
 
     /**
      * 작물 목록 페이지
