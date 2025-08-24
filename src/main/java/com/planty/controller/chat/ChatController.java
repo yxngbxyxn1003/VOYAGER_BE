@@ -48,8 +48,10 @@ public class ChatController {
     @PostMapping("/{chatId}/send")
     public ResponseEntity<ChatMessageDto> sendMessage(
             @PathVariable Long chatId,
-            @RequestBody SendMessageRequest request) {
-        return ResponseEntity.ok(chatService.sendMessage(chatId, request.getSenderId(), request.getContent()));
+            @RequestBody SendMessageRequest request,
+            @AuthenticationPrincipal CustomUserDetails user
+            ) {
+        return ResponseEntity.ok(chatService.sendMessage(chatId, user.getId(), request.getContent()));
     }
 
     @GetMapping("/me")
