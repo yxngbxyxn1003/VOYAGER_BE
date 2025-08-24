@@ -312,7 +312,8 @@ public class CropController {
     public ResponseEntity<CropDetailAnalysisResult> analyzeCropDiagnosisWithNewImage(
             @PathVariable Integer cropId,
             @PathVariable String analysisType,
-            @RequestParam("newImage") MultipartFile newImage,
+            @RequestParam("Image") MultipartFile newImage,
+
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         try {
@@ -502,6 +503,7 @@ public class CropController {
             CropRegistrationDto updateDto = null;
             if (cropDataJson != null && !cropDataJson.isBlank()) {
                 ObjectMapper objectMapper = new ObjectMapper();
+                objectMapper.findAndRegisterModules(); // Java 8 Date/Time 모듈 등록
                 updateDto = objectMapper.readValue(cropDataJson, CropRegistrationDto.class);
             }
             
