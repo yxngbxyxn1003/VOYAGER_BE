@@ -155,7 +155,23 @@ public class CropService {
         return diagnosisAnalysisService.analyzeCropDetail(crop, analysisType);
     }
 
+    /**
+     * 새 이미지로 작물 태그별 진단 분석
+     */
+    public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetailWithNewImage(Crop crop, com.planty.entity.crop.AnalysisType analysisType, MultipartFile newImage) throws IOException {
+        // 새 이미지 파일 저장
+        String savedImagePath = registrationAnalysisService.saveImageFile(newImage);
+        
+        // 새 이미지로 진단 분석 수행
+        return diagnosisAnalysisService.analyzeCropDetailWithNewImage(crop, analysisType, savedImagePath);
+    }
 
+    /**
+     * 새로운 통합 등록 방식: 텍스트 데이터와 이미지를 한 번에 처리하여 재배방법 분석 결과 반환
+     */
+    public Map<String, Object> analyzeCropWithData(User user, CropRegistrationDto cropData, MultipartFile imageFile) throws IOException {
+        return registrationAnalysisService.analyzeCropWithData(user, cropData, imageFile);
+    }
 
     /**
      * AI 분석 완료 후 작물 등록 완료 처리

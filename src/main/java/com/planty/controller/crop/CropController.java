@@ -1,12 +1,14 @@
 package com.planty.controller.crop;
 
 import com.planty.config.CustomUserDetails;
+import com.planty.dto.crop.HomeCropDto;
 import com.planty.service.user.UserService;
 import com.planty.dto.crop.CropRegistrationDto;
 import com.planty.dto.crop.CropDiagnosisRequestDto;
 import com.planty.dto.crop.CropDetailAnalysisResult;
 
 import com.planty.entity.crop.AnalysisStatus;
+import com.planty.entity.crop.AnalysisType;
 import com.planty.entity.crop.Crop;
 import com.planty.entity.user.User;
 import com.planty.service.crop.CropService;
@@ -42,9 +44,8 @@ public class CropController {
      * 작물 목록 페이지
      */
     @GetMapping
-    public ResponseEntity<List<Crop>> getCrops(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        User user = userService.findById(userDetails.getId());
-        List<Crop> crops = cropService.getUserCrops(user);
+    public ResponseEntity<List<HomeCropDto>> getCrops(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<HomeCropDto> crops = cropService.getDiaryCrops(userDetails.getId());
         return ResponseEntity.ok(crops);
     }
 
@@ -318,7 +319,7 @@ public class CropController {
     }
 
     /**
-     * 작물 태그별 진단 실행 (태그 선택 후)
+     * 작물 태그별 진단 실행 (기존 이미지 사용)
      */
     @PostMapping("/analyze-diagnosis")
     @ResponseBody
@@ -348,7 +349,7 @@ public class CropController {
                     .body(new CropDetailAnalysisResult(false, "잘못된 진단 타입입니다.", request.getAnalysisType()));
             }
 
-            // 태그별 진단 수행
+            // 태그별 진단 수행 (기존 이미지 사용)
             CropDetailAnalysisResult result = cropService.analyzeCropDetail(crop, request.getAnalysisType());
 
             return ResponseEntity.ok(result);
@@ -357,6 +358,60 @@ public class CropController {
             log.error("작물 태그별 진단 실패", e);
             return ResponseEntity.badRequest()
                 .body(new CropDetailAnalysisResult(false, "진단에 실패했습니다: " + e.getMessage(), request.getAnalysisType()));
+        }
+    }
+
+    /**
+     * 작물 태그별 진단 실행 (새 이미지 업로드)
+     */
+    @PostMapping(value = "/{cropId}/diagnosis/{analysisType}/with-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseBody
+    public ResponseEntity<CropDetailAnalysisResult> analyzeCropDiagnosisWithNewImage(
+            @PathVariable Integer cropId,
+            @PathVariable String analysisType,
+            @RequestParam("newImage") MultipartFile newImage,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        try {
+            // AnalysisType enum으로 변환
+            AnalysisType analysisTypeEnum;
+            try {
+                analysisTypeEnum = AnalysisType.valueOf(analysisType);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest()
+                    .body(new CropDetailAnalysisResult(false, "잘못된 진단 타입입니다: " + analysisType, null));
+            }
+            
+            User user = userService.findById(userDetails.getId());
+            Crop crop = cropService.getCropById(cropId);
+
+            // 권한 확인
+            if (!crop.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(403)
+                    .body(new CropDetailAnalysisResult(false, "권한이 없습니다.", analysisTypeEnum));
+            }
+
+            // 등록된 작물만 진단 가능
+            if (!crop.getIsRegistered()) {
+                return ResponseEntity.badRequest()
+                    .body(new CropDetailAnalysisResult(false, "등록되지 않은 작물은 진단할 수 없습니다.", analysisTypeEnum));
+            }
+
+            // 진단 분석 타입인지 확인
+            if (!analysisTypeEnum.isDiagnosisAnalysis()) {
+                return ResponseEntity.badRequest()
+                    .body(new CropDetailAnalysisResult(false, "잘못된 진단 타입입니다.", analysisTypeEnum));
+            }
+
+            // 새 이미지로 진단 수행
+            CropDetailAnalysisResult result = cropService.analyzeCropDetailWithNewImage(crop, analysisTypeEnum, newImage);
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            log.error("새 이미지로 작물 진단 실패", e);
+            return ResponseEntity.badRequest()
+                .body(new CropDetailAnalysisResult(false, "진단에 실패했습니다: " + e.getMessage(), null));
         }
     }
 
