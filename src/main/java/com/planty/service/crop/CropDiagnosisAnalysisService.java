@@ -7,6 +7,14 @@ import com.planty.service.openai.OpenAIService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 /**
  * 작물 태그별 진단 분석 전용 서비스
@@ -20,39 +28,83 @@ public class CropDiagnosisAnalysisService {
     private final OpenAIService openAIService;
 
     /**
-     * 작물 태그별 진단 분석 (현재상태, 질병여부, 품질/시장성)
+     * 독립적인 작물 진단 (cropID 없이 이미지만으로 진단)
      */
-    public CropDetailAnalysisResult analyzeCropDetail(Crop crop, AnalysisType analysisType) {
+    public CropDetailAnalysisResult analyzeCropDiagnosisStandalone(com.planty.entity.user.User user, AnalysisType analysisType, MultipartFile image) throws IOException {
         try {
             // 진단 분석 타입인지 확인
             if (!analysisType.isDiagnosisAnalysis()) {
                 return new CropDetailAnalysisResult(false, "잘못된 분석 타입입니다. 진단 분석만 가능합니다.", analysisType);
             }
 
-            // 작물 이미지가 없는 경우
-            if (crop.getCropImg() == null || crop.getCropImg().trim().isEmpty()) {
+            // 이미지 파일 검증
+            if (image == null || image.isEmpty()) {
                 return new CropDetailAnalysisResult(false, "분석할 이미지가 없습니다.", analysisType);
             }
 
-            log.info("이미지 분석 시작 - 파일 경로: {}", crop.getCropImg());
+            log.info("독립적인 작물 진단 시작 - 사용자: {}, 분석 타입: {}, 파일: {} (크기: {} bytes)", 
+                    user.getNickname(), analysisType, image.getOriginalFilename(), image.getSize());
+
+            // 이미지 파일을 임시로 저장
+            String savedImagePath = saveTemporaryImage(image);
 
             // OpenAI를 통한 태그별 진단 분석
-            CropDetailAnalysisResult result = openAIService.analyzeCropDetail(crop.getCropImg(), analysisType);
+            CropDetailAnalysisResult result = openAIService.analyzeCropDetail(savedImagePath, analysisType);
+
+            // 임시 이미지 파일 삭제
+            deleteTemporaryImage(savedImagePath);
 
             if (result.isSuccess()) {
-                log.info("작물 태그별 진단 분석 완료 - 작물 ID: {}, 분석 타입: {}, 성공: {}",
-                        crop.getId(), analysisType, result.isSuccess());
+                log.info("독립적인 작물 진단 완료 - 사용자: {}, 분석 타입: {}, 성공: {}", 
+                        user.getNickname(), analysisType, result.isSuccess());
             } else {
-                log.warn("작물 태그별 진단 분석 실패 - 작물 ID: {}, 분석 타입: {}, 메시지: {}",
-                        crop.getId(), analysisType, result.getMessage());
+                log.warn("독립적인 작물 진단 실패 - 사용자: {}, 분석 타입: {}, 메시지: {}", 
+                        user.getNickname(), analysisType, result.getMessage());
             }
 
             return result;
 
         } catch (Exception e) {
-            log.error("작물 태그별 진단 분석 중 오류 발생 - 작물 ID: {}, 분석 타입: {}, 이미지 경로: {}", 
-                    crop.getId(), analysisType, crop.getCropImg(), e);
+            log.error("독립적인 작물 진단 중 오류 발생 - 사용자: {}, 분석 타입: {}, 파일: {}", 
+                    user.getNickname(), analysisType, image.getOriginalFilename(), e);
             return new CropDetailAnalysisResult(false, "진단 분석 중 오류가 발생했습니다: " + e.getMessage(), analysisType);
+        }
+    }
+
+    /**
+     * 임시 이미지 파일 저장
+     */
+    private String saveTemporaryImage(MultipartFile file) throws IOException {
+        // 임시 디렉토리 생성
+        String tempDir = System.getProperty("java.io.tmpdir") + "/planty_diagnosis";
+        Path tempPath = Paths.get(tempDir);
+        if (!Files.exists(tempPath)) {
+            Files.createDirectories(tempPath);
+        }
+
+        // 고유한 파일명 생성
+        String fileName = "diagnosis_" + UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+        Path filePath = tempPath.resolve(fileName);
+
+        // 파일 저장
+        Files.copy(file.getInputStream(), filePath);
+        log.info("임시 이미지 파일 저장 완료: {}", filePath.toString());
+
+        return filePath.toString();
+    }
+
+    /**
+     * 임시 이미지 파일 삭제
+     */
+    private void deleteTemporaryImage(String imagePath) {
+        try {
+            Path path = Paths.get(imagePath);
+            if (Files.exists(path)) {
+                Files.delete(path);
+                log.info("임시 이미지 파일 삭제 완료: {}", imagePath);
+            }
+        } catch (IOException e) {
+            log.warn("임시 이미지 파일 삭제 실패: {}", imagePath, e);
         }
     }
 }
