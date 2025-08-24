@@ -166,6 +166,9 @@ public class CropRegistrationAnalysisService {
      * 이미지 파일 저장
      */
     public String saveImageFile(MultipartFile file) throws IOException {
+        log.info("CropRegistrationAnalysisService.saveImageFile 시작 - 파일: {} (크기: {} bytes)", 
+                file.getOriginalFilename(), file.getSize());
+        
         if (file.isEmpty()) {
             throw new IllegalArgumentException("업로드할 파일이 없습니다.");
         }
@@ -180,17 +183,15 @@ public class CropRegistrationAnalysisService {
             }
         }
 
-        // 파일 확장자 검증
+        // 파일 확장자 추출 (검증 없이)
         String originalFilename = file.getOriginalFilename();
         String extension = getFileExtension(originalFilename);
-        
-        // 허용된 이미지 확장자 검증
-        if (!isValidImageExtension(extension)) {
-            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. JPG, JPEG, PNG, GIF만 허용됩니다.");
-        }
 
-        // 고유한 파일명 생성
-        String fileName = UUID.randomUUID().toString() + extension;
+        // 고유한 파일명 생성 (확장자가 있는 경우에만 추가)
+        String fileName = UUID.randomUUID().toString();
+        if (extension != null && !extension.isEmpty()) {
+            fileName += extension;
+        }
 
         // 파일 저장
         File destinationFile = new File(uploadDir, fileName);
@@ -233,15 +234,10 @@ public class CropRegistrationAnalysisService {
      */
     private String getFileExtension(String filename) {
         if (filename == null || !filename.contains(".")) {
-            return ".jpg"; // 기본 확장자
+            return ""; // 확장자가 없는 경우 빈 문자열 반환
         }
         return filename.substring(filename.lastIndexOf(".")).toLowerCase();
     }
 
-    /**
-     * 유효한 이미지 확장자 검증
-     */
-    private boolean isValidImageExtension(String extension) {
-        return extension.matches("\\.(jpg|jpeg|png|gif)$");
-    }
+
 }

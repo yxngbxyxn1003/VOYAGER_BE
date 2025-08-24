@@ -5,15 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ae24eeda-e1e7-47d2-8525-14d67eecac53" name="변경" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/planty/storage/ImageUrlMapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules/VOYAGER_BE.main.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules/VOYAGER_BE.test.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.9/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.9/fileHashes/fileHashes.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/8.9/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/8.9/fileHashes/fileHashes.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules/VOYAGER_BE.iml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/dto/board/BoardDiaryResDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/board/BoardDiaryResDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/board/BoardService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/board/BoardService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/mypage/MypageService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/mypage/MypageService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/controller/crop/CropController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/controller/crop/CropController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/dto/crop/HomeCropDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/crop/HomeCropDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/crop/CropService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/crop/CropService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/diary/DiaryService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/diary/DiaryService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/db/migration/V1__init.sql" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -87,7 +88,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "Spring Boot.PlantyApplication.executor": "Run",
     "Spring Boot.Unnamed.executor": "Run",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "clean-api-branch",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/VOYAGER_BE",

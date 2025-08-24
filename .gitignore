@@ -1,16 +1,68 @@
-.idea/
-
+# Gradle - 강력한 차단
 .gradle/
-/build/
+.gradle
+build/
+build
 out/
+out
 
-# macOS
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/
+
+# OS
 .DS_Store
+.DS_Store?
 ._*
-.AppleDouble
-.LSOverride
 .Spotlight-V100
 .Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory
+coverage/
+.nyc_output
+
+# Dependencies
+node_modules/
+.npm
+.node_repl_history
+
+# Output files
+*.tgz
+.yarn-integrity
 
 # Environment variables
 .env
@@ -18,7 +70,7 @@ out/
 .env.development
 .env.production
 
-# Secret files and keys
+# Secret files
 *.key
 *.pem
 *.p12
@@ -26,16 +78,43 @@ out/
 secrets/
 config/secrets/
 
-# Application configuration with sensitive data
+# Application configuration
 application-local.yml
 application-dev.yml
 application-prod.yml
 application-secret.yml
 
-# API keys and tokens
+# API keys
 api-keys.txt
 tokens.txt
 credentials.json
 
-# 파일
-/uploads/
+# Application specific
+uploads/
+temp/
+cache/
+
+# Database
+*.db
+*.sqlite
+
+# Spring Boot
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# 강제로 모든 gradle 관련 파일 차단
+**/gradle/**
+**/build/**
+**/.gradle/**
+**/out/**
+**/target/**
+
+# 모든 컴파일된 클래스 파일 차단
+**/*.class
+**/*.jar
+**/*.war

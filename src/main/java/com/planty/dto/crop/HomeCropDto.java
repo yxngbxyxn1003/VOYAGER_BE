@@ -20,7 +20,7 @@ public class HomeCropDto {
     
     @JsonProperty("plantingDate")
     private String plantingDate;
-    
+
     @JsonProperty("endAt")
     private String endAt;
     
