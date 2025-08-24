@@ -114,6 +114,7 @@ public class DiaryService {
                             crop.getStartAt() != null ? crop.getStartAt().toString() : null,
                             crop.getIsRegistered(),
                             crop.getAnalysisStatus() != null ? crop.getAnalysisStatus().name() : null,
+                            crop.getEndAt() != null ? crop.getEndAt().toString() : null,  // endDate 매핑 추가
                             categoryName
                     );
                 })
