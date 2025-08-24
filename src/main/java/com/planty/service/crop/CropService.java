@@ -68,13 +68,6 @@ public class CropService {
         return savedCrop;
     }
 
-    /**
-     * 사용자의 작물 목록 조회 (엔티티 직접 반환)
-     */
-    @Transactional(readOnly = true)
-    public List<Crop> getUserCrops(User user) {
-        return cropRepository.findByUserOrderByCreatedAtDesc(user);
-    }
 
     /**
      * 홈 화면용 사용자 작물 목록 조회 (DTO 변환하여 반환)
