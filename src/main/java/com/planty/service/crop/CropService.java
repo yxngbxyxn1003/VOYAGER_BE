@@ -69,6 +69,22 @@ public class CropService {
     public List<Crop> getUserCrops(User user) {
         return cropRepository.findByUserOrderByCreatedAtDesc(user);
     }
+
+    /**
+     * 홈 화면용 작물 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<HomeCropDto> getHomeCrop(Integer userId) {
+        List<Crop> crops = cropRepository.findByUser_IdAndHarvestFalseOrderByCreatedAtDesc(userId);
+        return crops.stream()
+                .map(HomeCropDto::of)
+                .map(dto -> {
+                    dto.setCropImg(imageUrlMapper.toPublic(dto.getCropImg()));
+                    return dto;
+                })
+                .toList();
+    }
+
     /**
      * 작물 상세 정보 조회
      */
