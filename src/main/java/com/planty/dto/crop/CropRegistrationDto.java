@@ -20,5 +20,4 @@ public class CropRegistrationDto {
     private AnalysisStatus analysisStatus;
     private Boolean isRegistered;
     private String cropImg;
-    private MultipartFile imageFile;  // 이미지 파일 필드 추가
 }
