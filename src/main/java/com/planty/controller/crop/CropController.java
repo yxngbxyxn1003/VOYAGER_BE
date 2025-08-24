@@ -27,6 +27,9 @@ import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import com.planty.dto.diary.DiaryFormDto;
+import com.planty.entity.diary.Diary;
+import com.planty.service.diary.DiaryService;
 
 @Slf4j
 @RestController
@@ -37,6 +40,7 @@ public class CropController {
     private final CropService cropService;
     private final UserService userService;
     private final ObjectMapper objectMapper;
+    private final DiaryService diaryService;
 
     /**
      * 작물 목록 페이지
@@ -333,12 +337,13 @@ public class CropController {
         }
     }
 
+
     /**
-     * 진단 결과를 바탕으로 재배일지 작성 폼 데이터 조회
+     * 진단결과 기반 재배일지 생성 (새로운 엔드포인트)
      */
-    @PostMapping("/diagnosis-to-diary")
+    @PostMapping("/diagnosis-diary/create")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> createDiaryWithDiagnosis(
+    public ResponseEntity<Map<String, Object>> createDiagnosisBasedDiary(
             @RequestBody Map<String, Object> request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
@@ -346,27 +351,46 @@ public class CropController {
 
         try {
             User user = userService.findById(userDetails.getId());
+            String title = (String) request.get("title");
+            String content = (String) request.get("content");
             String diagnosisType = (String) request.get("diagnosisType");
             @SuppressWarnings("unchecked")
             Map<String, Object> diagnosisResult = (Map<String, Object>) request.get("diagnosisResult");
+            Boolean includeDiagnosis = (Boolean) request.get("includeDiagnosis");
+            @SuppressWarnings("unchecked")
+            List<String> imageUrls = (List<String>) request.get("imageUrls");
 
-            // 진단 결과를 재배일지 템플릿으로 변환
-            String diaryTemplate = createDiaryTemplate(diagnosisType, diagnosisResult);
+            // DiaryService를 사용하여 진단결과 기반 재배일지 생성
+            Diary createdDiary = diaryService.createDiagnosisBasedDiary(
+                user.getId(), title, content, diagnosisType, 
+                diagnosisResult, includeDiagnosis, imageUrls
+            );
 
             response.put("success", true);
-            response.put("diagnosisType", diagnosisType);
-            response.put("diagnosisResult", diagnosisResult);
-            response.put("diaryTemplate", diaryTemplate);
-            response.put("message", "재배일지 작성 준비가 완료되었습니다.");
+            response.put("message", "진단결과 기반 재배일지가 생성되었습니다.");
+            response.put("diaryId", createdDiary.getId());
+            response.put("diaryTitle", createdDiary.getTitle());
 
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("진단 결과 기반 재배일지 준비 실패", e);
+            log.error("진단결과 기반 재배일지 생성 실패", e);
             response.put("success", false);
-            response.put("message", "재배일지 준비에 실패했습니다: " + e.getMessage());
+            response.put("message", "재배일지 생성에 실패했습니다: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
+    }
+
+    /**
+     * 진단 타입 이름 반환
+     */
+    private String getDiagnosisTypeName(String diagnosisType) {
+        return switch (diagnosisType) {
+            case "CURRENT_STATUS" -> "현재 상태 분석";
+            case "DISEASE_CHECK" -> "질병 여부 분석";
+            case "QUALITY_MARKET" -> "품질 및 시장성 분석";
+            default -> "진단 분석";
+        };
     }
 
     /**

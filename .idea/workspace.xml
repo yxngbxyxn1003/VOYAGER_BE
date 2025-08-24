@@ -5,7 +5,25 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ae24eeda-e1e7-47d2-8525-14d67eecac53" name="변경" comment="">
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules/VOYAGER_BE.test.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules/VOYAGER_BE.test.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/META-INF/spring-configuration-metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/META-INF/spring-configuration-metadata.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/chat/ChatController.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/chat/ChatController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/diary/DiaryController.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/diary/DiaryController.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/dto/chat/ChatDto.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/dto/chat/ChatDto.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/chat/ChatService.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/chat/ChatService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/crop/CropDiagnosisAnalysisService.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/crop/CropDiagnosisAnalysisService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/crop/CropService.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/service/crop/CropService.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/controller/crop/CropController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/controller/crop/CropController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/dto/diary/DiaryDetailDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/diary/DiaryDetailDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/dto/diary/DiaryListDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/diary/DiaryListDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/dto/diary/DiaryUpdateDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/diary/DiaryUpdateDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/entity/diary/Diary.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/entity/diary/Diary.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/repository/diary/DiaryRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/repository/diary/DiaryRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/diary/DiaryService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/diary/DiaryService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/openai/OpenAIService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/openai/OpenAIService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -72,7 +90,10 @@
     "RunOnceActivity.git.unshallow": "true",
     "Spring Boot.PlantyApplication.executor": "Run",
     "Spring Boot.Unnamed.executor": "Run",
+
+    "git-widget-placeholder": "please",
     "git-widget-placeholder": "fix-jy",
+
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/VOYAGER_BE",
