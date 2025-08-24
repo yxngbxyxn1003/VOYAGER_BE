@@ -3,6 +3,7 @@ package com.planty.service.board;
 import com.planty.dto.board.AiChatDto;
 import com.planty.dto.board.AiMessageResDto;
 import com.planty.dto.board.AiMessageWithBoardsDto;
+import com.planty.dto.board.BoardRecDto;
 import com.planty.entity.board.AiChat;
 import com.planty.entity.board.AiMessage;
 import com.planty.entity.board.Board;
@@ -87,13 +88,14 @@ public class AiChatService {
         return aiMessageRepository.save(aiMessage);
     }
 
-    // 판매게시글 추천만 가져오기
-    public List<Board> getRecommendedBoards(String keyword) {
-        return boardRepository.findByCropCategoryName(keyword)
-                .stream()
-                .limit(5) // 최대 5개
+    // 추천 검색어만 반환
+    public List<BoardRecDto> getRecommendedBoards(String keyword) {
+        return boardRepository.findByCropCategoryName(keyword).stream()
+                .limit(5)
+                .map(board -> new BoardRecDto(board.getTitle()))
                 .toList();
     }
+
 
 
     public AiChat getChat(Long chatId) {

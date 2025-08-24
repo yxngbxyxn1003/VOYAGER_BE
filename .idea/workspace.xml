@@ -5,7 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ae24eeda-e1e7-47d2-8525-14d67eecac53" name="변경" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/board/BoardRecDto.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/controller/board/AiChatController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/controller/board/AiChatController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/dto/board/AiChatDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/board/AiChatDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/dto/board/AiMessageResDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/board/AiMessageResDto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/board/AiChatService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/board/AiChatService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,6 +38,13 @@
         </projects_view>
       </state>
     </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />

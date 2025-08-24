@@ -1,10 +1,7 @@
 package com.planty.controller.board;
 
 import com.planty.config.CustomUserDetails;
-import com.planty.dto.board.AiChatDto;
-import com.planty.dto.board.AiChatResDto;
-import com.planty.dto.board.AiMessageResDto;
-import com.planty.dto.board.AiMessageWithBoardsDto;
+import com.planty.dto.board.*;
 import com.planty.entity.board.AiChat;
 import com.planty.entity.board.AiMessage;
 import com.planty.entity.board.Board;
@@ -60,7 +57,7 @@ public class AiChatController {
             AiMessage aiMsg = aiChatService.generateAiResponse(chat, content);
 
             // 게시글 추천 추가
-            List<Board> recommendedBoards = aiChatService.getRecommendedBoards(content);
+            List<BoardRecDto> recommendedBoards = aiChatService.getRecommendedBoards(content);
             response.put("aiMessage", new AiMessageResDto(
                     aiMsg.getId(),
                     aiMsg.getContent(),
