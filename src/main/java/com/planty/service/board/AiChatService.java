@@ -9,6 +9,7 @@ import com.planty.entity.user.User;
 import com.planty.repository.board.AiChatRepository;
 import com.planty.repository.board.AiMessageRepository;
 import com.planty.repository.board.BoardRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +21,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -36,13 +38,24 @@ public class AiChatService {
     private String apiKey;
 
     // 새로운 채팅 시작
+    @Transactional
     public AiChat createChat(User user) {
+        // 이미 존재하는 채팅 조회
+        Optional<AiChat> existingChat = aiChatRepository.findByUser(user);
+
+        if (existingChat.isPresent()) {
+            return existingChat.get(); // 이미 존재하면 기존 채팅 반환
+        }
+
+        // 존재하지 않으면 새로 생성
         AiChat chat = AiChat.builder()
                 .user(user)
                 .createdAt(LocalDateTime.now())
                 .build();
+
         return aiChatRepository.save(chat);
     }
+
 
     // 유저 메시지 저장
     public AiMessage saveUserMessage(AiChat chat, String content) {
