@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 // 재배일지 컨트롤러
@@ -32,58 +33,57 @@ public class DiaryController {
     private final DiaryService diaryService;
     private final StorageService storageService;
 
-    // 재배일지 작성용 사용자 작물 목록 조회
-    // 이제 CropController의 /api/crop/home-crops를 사용합니다
-    /*
-    @GetMapping("/crops")
-    public ResponseEntity<List<HomeCropDto>> getUserCrops(
-            @AuthenticationPrincipal CustomUserDetails me
-    ) {
-        // 권한이 없을 때
-        if (me == null) return ResponseEntity.status(401).build();
-
-        // 사용자 작물 목록 반환
-        return ResponseEntity.ok(diaryService.getUserCrops(me.getId()));
-    }
-    */
+ 
 
     // 재배일지 등록 (JSON+파일)
     @PostMapping(value="/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createDiary(
             @AuthenticationPrincipal CustomUserDetails me,
-            @RequestPart("form") @Validated DiaryFormDto form,  // 재배일지 데이터
+            @RequestPart("form") String formJson,  // JSON 문자열로 받기
             @RequestPart(value = "images", required = false) List<MultipartFile> images // 재배일지 이미지
     ) throws IOException {
         // 권한이 없을 때
         if (me == null) return ResponseEntity.status(401).build();
 
-        // 이미지 개수 검증 (최대 9개)
-        if (images != null && images.size() > 9) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiSuccess(400, "이미지는 최대 9개까지만 업로드할 수 있습니다."));
-        }
+        try {
+            // JSON 문자열을 DiaryFormDto로 변환
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.findAndRegisterModules(); // Java 8 Date/Time 모듈 등록
+            DiaryFormDto form = objectMapper.readValue(formJson, DiaryFormDto.class);
+            
+            // 이미지 개수 검증 (최대 9개)
+            if (images != null && images.size() > 9) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiSuccess(400, "이미지는 최대 9개까지만 업로드할 수 있습니다."));
+            }
 
-        // 파일 저장 → URL 리스트 생성
-        List<String> urls = new ArrayList<>();
-        if (images != null) {
-            for (MultipartFile f : images) {
-                if (!f.isEmpty()) {
-                    urls.add(storageService.save(f, "diary"));
+            // 파일 저장 → URL 리스트 생성
+            List<String> urls = new ArrayList<>();
+            if (images != null) {
+                for (MultipartFile f : images) {
+                    if (!f.isEmpty()) {
+                        urls.add(storageService.save(f, "diary"));
+                    }
                 }
             }
-        }
 
-        // 이미지 URL 개수 재검증 (빈 파일 제외 후)
-        if (urls.size() > 9) {
+            // 이미지 URL 개수 재검증 (빈 파일 제외 후)
+            if (urls.size() > 9) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiSuccess(400, "유효한 이미지는 최대 9개까지만 업로드할 수 있습니다."));
+            }
+
+            // 서비스 호출
+            diaryService.saveDiary(me.getId(), form, urls);
+
+            // 성공 응답
+            return ResponseEntity.status(201).body(new ApiSuccess(201, "재배일지가 성공적으로 작성되었습니다."));
+            
+        } catch (Exception e) {
+            // JSON 파싱 오류나 기타 오류 처리
             return ResponseEntity.badRequest()
-                    .body(new ApiSuccess(400, "유효한 이미지는 최대 9개까지만 업로드할 수 있습니다."));
+                    .body(new ApiSuccess(400, "재배일지 데이터 형식이 올바르지 않습니다: " + e.getMessage()));
         }
-
-        // 서비스 호출
-        diaryService.saveDiary(me.getId(), form, urls);
-
-        // 성공 응답
-        return ResponseEntity.status(201).body(new ApiSuccess(201, "재배일지가 성공적으로 작성되었습니다."));
     }
 
     // 재배일지 상세 조회
