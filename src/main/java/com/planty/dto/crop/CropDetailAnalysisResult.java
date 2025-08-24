@@ -4,6 +4,9 @@ import com.planty.entity.crop.AnalysisType;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 작물 세부 분석 결과 DTO
  */
@@ -36,5 +39,69 @@ public class CropDetailAnalysisResult {
         this.success = success;
         this.message = message;
         this.analysisType = analysisType;
+    }
+    
+    /**
+     * 분석 타입에 따른 분석 결과를 Map으로 반환
+     */
+    public Map<String, Object> getAnalysisResult() {
+        Map<String, Object> result = new HashMap<>();
+        
+        if (analysisType == null) {
+            return result;
+        }
+        
+        switch (analysisType) {
+            case CURRENT_STATUS:
+                if (currentStatusSummary != null && !currentStatusSummary.trim().isEmpty()) {
+                    result.put("currentStatusSummary", currentStatusSummary);
+                }
+                break;
+                
+            case DISEASE_CHECK:
+                if (diseaseStatus != null && !diseaseStatus.trim().isEmpty()) {
+                    result.put("diseaseStatus", diseaseStatus);
+                }
+                if (diseaseDetails != null && !diseaseDetails.trim().isEmpty()) {
+                    result.put("diseaseDetails", diseaseDetails);
+                }
+                if (preventionMethods != null && !preventionMethods.trim().isEmpty()) {
+                    result.put("preventionMethods", preventionMethods);
+                }
+                break;
+                
+            case QUALITY_MARKET:
+                if (marketRatio != null && !marketRatio.trim().isEmpty()) {
+                    result.put("marketRatio", marketRatio);
+                }
+                if (colorUniformity != null && !colorUniformity.trim().isEmpty()) {
+                    result.put("colorUniformity", colorUniformity);
+                }
+                if (saturation != null && !saturation.trim().isEmpty()) {
+                    result.put("saturation", saturation);
+                }
+                if (brightness != null && !brightness.trim().isEmpty()) {
+                    result.put("brightness", brightness);
+                }
+                if (tasteStorage != null && !tasteStorage.trim().isEmpty()) {
+                    result.put("tasteStorage", tasteStorage);
+                }
+                if (transportResistance != null && !transportResistance.trim().isEmpty()) {
+                    result.put("transportResistance", transportResistance);
+                }
+                if (storageEvaluation != null && !storageEvaluation.trim().isEmpty()) {
+                    result.put("storageEvaluation", storageEvaluation);
+                }
+                break;
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 분석 메시지를 반환
+     */
+    public String getAnalysisMessage() {
+        return this.message;
     }
 }
