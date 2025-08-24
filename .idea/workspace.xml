@@ -5,15 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ae24eeda-e1e7-47d2-8525-14d67eecac53" name="변경" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/planty/storage/ImageUrlMapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules/VOYAGER_BE.main.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules/VOYAGER_BE.test.iml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/dto/board/BoardDiaryResDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/board/BoardDiaryResDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/board/BoardService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/board/BoardService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/mypage/MypageService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/mypage/MypageService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -87,7 +79,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "Spring Boot.PlantyApplication.executor": "Run",
     "Spring Boot.Unnamed.executor": "Run",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "fix-jy",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/VOYAGER_BE",
