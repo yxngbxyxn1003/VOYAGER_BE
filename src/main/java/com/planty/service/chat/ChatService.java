@@ -37,13 +37,13 @@ public class ChatService {
 
     // 채팅 시작
     @Transactional
-    public ChatDto startChat(List<Integer> userIds) {
+    public ChatDto startChat(Integer userId, Integer sellerId) {
         Chat chat = new Chat();
         chat.setCreatedAt(LocalDateTime.now());
         chat.setModifiedAt(LocalDateTime.now());
         chatRepository.save(chat);
 
-        for (Integer userId : userIds) {
+        if (userId == null || sellerId == null) {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
             ChatUser cu = new ChatUser();
@@ -52,7 +52,7 @@ public class ChatService {
             chatUserRepository.save(cu);
         }
 
-        return new ChatDto(chat.getId(), userIds);
+        return new ChatDto(chat.getId(), sellerId);
     }
 
     // 채팅 기록 조회
