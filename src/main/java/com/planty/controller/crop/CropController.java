@@ -43,9 +43,9 @@ public class CropController {
     /**
      * 작물 목록 페이지
      */
-    @GetMapping
-    public ResponseEntity<List<HomeCropDto>> getCrops(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        List<HomeCropDto> crops = cropService.getDiaryCrops(userDetails.getId());
+    @GetMapping("")
+    public ResponseEntity<List<HomeCropDto>> getHomeCrop(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        List<HomeCropDto> crops = cropService.getHomeCrop(userDetails.getId());
         return ResponseEntity.ok(crops);
     }
 
