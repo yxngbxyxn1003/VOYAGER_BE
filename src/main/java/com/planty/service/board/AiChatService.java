@@ -1,5 +1,6 @@
 package com.planty.service.board;
 
+import com.planty.dto.board.AiChatDto;
 import com.planty.dto.board.AiMessageResDto;
 import com.planty.dto.board.AiMessageWithBoardsDto;
 import com.planty.entity.board.AiChat;
@@ -37,24 +38,26 @@ public class AiChatService {
     @Value("${openai.api.key}")
     private String apiKey;
 
-    // 새로운 채팅 시작
     @Transactional
-    public AiChat createChat(User user) {
+    public AiChatDto createChat(User user) {
         // 이미 존재하는 채팅 조회
         Optional<AiChat> existingChat = aiChatRepository.findByUser(user);
 
+        AiChat chat;
         if (existingChat.isPresent()) {
-            return existingChat.get(); // 이미 존재하면 기존 채팅 반환
+            chat = existingChat.get(); // 이미 존재하면 기존 채팅 반환
+        } else {
+            // 존재하지 않으면 새로 생성
+            chat = AiChat.builder()
+                    .user(user)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            chat = aiChatRepository.save(chat);
         }
 
-        // 존재하지 않으면 새로 생성
-        AiChat chat = AiChat.builder()
-                .user(user)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        return aiChatRepository.save(chat);
+        return new AiChatDto(chat.getId());
     }
+
 
 
     // 유저 메시지 저장

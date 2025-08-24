@@ -5,8 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ae24eeda-e1e7-47d2-8525-14d67eecac53" name="변경" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/planty/dto/board/AiChatDto.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/repository/board/AiChatRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/repository/board/AiChatRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/controller/board/AiChatController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/controller/board/AiChatController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/board/AiChatService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/board/AiChatService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -35,6 +36,13 @@
         </projects_view>
       </state>
     </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -123,7 +131,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1754736053154</updated>
-      <workItem from="1756058628630" duration="4605000" />
+      <workItem from="1756058628630" duration="5133000" />
     </task>
     <servers />
   </component>

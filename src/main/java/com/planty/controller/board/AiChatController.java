@@ -1,6 +1,7 @@
 package com.planty.controller.board;
 
 import com.planty.config.CustomUserDetails;
+import com.planty.dto.board.AiChatDto;
 import com.planty.dto.board.AiChatResDto;
 import com.planty.dto.board.AiMessageResDto;
 import com.planty.dto.board.AiMessageWithBoardsDto;
@@ -32,12 +33,12 @@ public class AiChatController {
 
     // 새로운 채팅 시작
     @PostMapping("/start")
-    public ResponseEntity<AiChat> startChat(@AuthenticationPrincipal CustomUserDetails authUser) {
+    public ResponseEntity<AiChatDto> startChat(@AuthenticationPrincipal CustomUserDetails authUser) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         System.out.println("hereis" + authentication.getPrincipal());
         User user = userRepository.findById(authUser.getId())
                 .orElseThrow(() -> new RuntimeException("유저 없음"));
-        AiChat chat = aiChatService.createChat(user);
+        AiChatDto chat = aiChatService.createChat(user);
         return ResponseEntity.ok(chat);
     }
 
