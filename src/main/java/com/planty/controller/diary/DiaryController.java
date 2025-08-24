@@ -32,6 +32,7 @@ public class DiaryController {
 
     private final DiaryService diaryService;
     private final StorageService storageService;
+    private final ObjectMapper objectMapper;
 
  
 
@@ -47,8 +48,6 @@ public class DiaryController {
 
         try {
             // JSON 문자열을 DiaryFormDto로 변환
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.findAndRegisterModules(); // Java 8 Date/Time 모듈 등록
             DiaryFormDto form = objectMapper.readValue(formJson, DiaryFormDto.class);
             
             // 이미지 개수 검증 (최대 9개)

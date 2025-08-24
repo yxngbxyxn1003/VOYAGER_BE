@@ -37,6 +37,15 @@ logging:
 jwt:
   secret: ${JWT_SECRET}
   access-exp-millis: ${JWT_ACCESS_EXP_MILLIS:86400000}
+
+# Jackson 설정
+spring:
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
 # 업로드 디렉토리
 upload-dir: ${APP_UPLOAD_DIR}
 
