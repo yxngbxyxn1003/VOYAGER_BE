@@ -22,7 +22,7 @@ public class QDiaryImage extends EntityPathBase<DiaryImage> {
 
     public static final QDiaryImage diaryImage = new QDiaryImage("diaryImage");
 
-    public final DatePath<java.time.LocalDate> createdAt = createDate("createdAt", java.time.LocalDate.class);
+    public final DateTimePath<java.time.LocalDateTime> createdAt = createDateTime("createdAt", java.time.LocalDateTime.class);
 
     public final QDiary diary;
 
