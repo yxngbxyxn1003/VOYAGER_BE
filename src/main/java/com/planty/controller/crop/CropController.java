@@ -43,6 +43,12 @@ public class CropController {
     @GetMapping("")
     @ResponseBody
     public ResponseEntity<List<HomeCropDto>> getHomeCrop(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        log.info("[CROP] getHomeCrop called with userDetails: {}", userDetails);
+        if (userDetails == null) {
+            log.error("[CROP] userDetails is null!");
+            return ResponseEntity.status(401).body(null);
+        }
+        log.info("[CROP] User ID: {}, Username: {}", userDetails.getId(), userDetails.getUsername());
         return ResponseEntity.ok(cropService.getHomeCrop(userDetails.getId()));
     }
 
