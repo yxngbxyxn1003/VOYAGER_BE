@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 // 작물 카테고리 엔티티
 @Entity
-@Table(name = "crop_category",
+@Table(name = "crop_categories",
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"crop_id", "category_name"})
         })

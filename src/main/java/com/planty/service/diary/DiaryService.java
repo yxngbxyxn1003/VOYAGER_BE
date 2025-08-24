@@ -112,6 +112,7 @@ public class DiaryService {
                             crop.getName(),
                             crop.getCropImg(),
                             crop.getStartAt() != null ? crop.getStartAt().toString() : null,
+                            crop.getEndAt() != null ? crop.getEndAt().toString() : null,  // endDate 매핑 추가
                             crop.getIsRegistered(),
                             crop.getAnalysisStatus() != null ? crop.getAnalysisStatus().name() : null,
                             categoryName
