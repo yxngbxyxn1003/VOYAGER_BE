@@ -32,7 +32,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 
 @Slf4j
-@Controller
+@RestController
 @RequestMapping("/api/crop")
 @RequiredArgsConstructor
 public class CropController {
