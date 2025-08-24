@@ -103,14 +103,11 @@ public class DiaryService {
         
         return crops.stream()
                 .map(crop -> {
-                    // 카테고리명 추출 (첫 번째 카테고리 사용)
-                    String categoryName = crop.getCategories().stream()
-                            .findFirst()
-                            .map(category -> category.getCategoryName())
-                            .orElse("기타");
-                    
-                    // 디버깅을 위한 로그 추가
-                    System.out.println("Crop ID: " + crop.getId() + ", EndAt: " + crop.getEndAt());
+                    // 카테고리명 추출 (안전하게 처리)
+                    String categoryName = "기타";
+                    if (crop.getCategories() != null && !crop.getCategories().isEmpty()) {
+                        categoryName = crop.getCategories().get(0).getCategoryName();
+                    }
                     
                     return HomeCropDto.of(crop);
                 })
@@ -193,6 +190,9 @@ public class DiaryService {
         
         // 사용자의 모든 재배일지 조회 (카테고리 필터링 없음)
         List<Diary> diaries = diaryRepository.findByUserOrderByCreatedAtDesc(user);
+        
+        // 간단한 로깅 (문제 파악용)
+        System.out.println("사용자 ID: " + userId + ", 조회된 재배일지 수: " + diaries.size());
         
         return diaries.stream()
                 .map(diary -> {
