@@ -15,7 +15,8 @@ public interface CropRepository extends JpaRepository<Crop, Integer> {
     // 사용자별 작물 목록 조회
     List<Crop> findByUserOrderByCreatedAtDesc(User user);
     
-    // 사용자별 등록된 작물 목록 조회
+    // 사용자별 등록된 작물 목록 조회 (카테고리 정보 포함)
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"categories"})
     List<Crop> findByUserAndIsRegisteredTrueOrderByCreatedAtDesc(User user);
     
     // 분석 상태별 작물 조회

@@ -7,6 +7,7 @@ import com.planty.dto.crop.CropRegistrationDto;
 import com.planty.dto.crop.CropDiagnosisRequestDto;
 import com.planty.dto.crop.CropDetailAnalysisResult;
 
+
 import com.planty.entity.crop.AnalysisStatus;
 import com.planty.entity.crop.AnalysisType;
 import com.planty.entity.crop.Crop;
@@ -73,15 +74,10 @@ public class CropController {
             cropInfo.put("cropImg", crop.getCropImg());
             cropInfo.put("startAt", crop.getStartAt());
             cropInfo.put("endAt", crop.getEndAt());
-            cropInfo.put("environment", crop.getEnvironment());
-            cropInfo.put("temperature", crop.getTemperature());
-            cropInfo.put("height", crop.getHeight());
             cropInfo.put("howTo", crop.getHowTo());
             cropInfo.put("analysisStatus", crop.getAnalysisStatus().toString());
             cropInfo.put("isRegistered", crop.getIsRegistered());
             cropInfo.put("harvest", crop.getHarvest());
-            cropInfo.put("createdAt", crop.getCreatedAt());
-            cropInfo.put("modifiedAt", crop.getModifiedAt());
 
             // 같은 종류 작물의 재배일지 목록 조회
             List<Map<String, Object>> cropDiaries = cropService.getCropDiariesByCategory(cropId, user.getId());
@@ -571,3 +567,4 @@ public class CropController {
         }
     }
 }
+
