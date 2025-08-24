@@ -10,6 +10,7 @@ import com.planty.entity.user.User;
 import com.planty.repository.crop.CropRepository;
 import com.planty.repository.diary.DiaryRepository;
 import com.planty.repository.user.UserRepository;
+import com.planty.service.crop.CropService;
 import com.planty.storage.StorageService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,6 +32,7 @@ public class DiaryService {
     private final DiaryRepository diaryRepository;
     private final UserRepository userRepository;
     private final CropRepository cropRepository;
+    private final CropService cropService;
     @SuppressWarnings("unused")
     private final StorageService storageService;
     private final ObjectMapper objectMapper = new ObjectMapper();

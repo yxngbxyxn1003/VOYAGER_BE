@@ -1,10 +1,12 @@
 package com.planty.service.crop;
 
 import com.planty.dto.crop.CropRegistrationDto;
+import com.planty.dto.crop.HomeCropDto;
 import com.planty.entity.crop.AnalysisStatus;
 import com.planty.entity.crop.Crop;
 import com.planty.entity.user.User;
 import com.planty.repository.crop.CropRepository;
+import com.planty.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ public class CropService {
     private final CropRepository cropRepository;
     private final CropRegistrationAnalysisService registrationAnalysisService;
     private final CropDiagnosisAnalysisService diagnosisAnalysisService;
+    private final UserRepository userRepository;
     /**
      * 작물 기본 정보로 임시 등록 (이미지 업로드 전)
      */
@@ -129,35 +132,9 @@ public class CropService {
         return cropRepository.findById(cropId)
                 .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
     }
-//
 
-//
-//    /**
-//     * 작물 삭제
-//     */
-//    public void deleteCrop(Integer cropId, User user) {
-//        Crop crop = cropRepository.findById(cropId)
-//                .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
-//
-//        // 권한 확인
-//        if (!crop.getUser().getId().equals(user.getId())) {
-//            throw new IllegalArgumentException("삭제 권한이 없습니다.");
-//        }
-//
-//        // 이미지 파일 삭제
-//        if (crop.getCropImg() != null) {
-//            try {
-//                File imageFile = new File(crop.getCropImg());
-//                if (imageFile.exists()) {
-//                    imageFile.delete();
-//                }
-//            } catch (Exception e) {
-//                log.warn("이미지 파일 삭제 실패: {}", crop.getCropImg(), e);
-//            }
-//        }
-//
-//        cropRepository.delete(crop);
-//    }
+
+
 //
 //    /**
 //     * 홈 화면용 사용자 작물 목록 조회 (등록된 것과 미등록된 것 모두)
@@ -323,6 +300,36 @@ public class CropService {
         log.info("작물 정보 수정 완료: Crop ID {}", cropId);
 
         return updatedCrop;
+    }
+
+    /**
+     * 재배일지 작성용 사용자 작물 목록 조회 (등록된 작물만)
+     */
+    @Transactional(readOnly = true)
+    public List<HomeCropDto> getDiaryCrops(Integer userId) {
+        User user = userRepository.getReferenceById(userId);
+        List<Crop> crops = cropRepository.findByUserAndIsRegisteredTrueOrderByCreatedAtDesc(user);
+        
+        return crops.stream()
+                .map(crop -> {
+                    // 카테고리명 추출 (첫 번째 카테고리 사용)
+                    String categoryName = crop.getCategories().stream()
+                            .findFirst()
+                            .map(category -> category.getCategoryName())
+                            .orElse("기타");
+                    
+                    return new HomeCropDto(
+                            crop.getId(),
+                            crop.getName(),
+                            crop.getCropImg(),
+                            crop.getStartAt() != null ? crop.getStartAt().toString() : null,
+                            crop.getEndAt() != null ? crop.getEndAt().toString() : null,
+                            crop.getIsRegistered(),
+                            crop.getAnalysisStatus() != null ? crop.getAnalysisStatus().name() : null,
+                            categoryName
+                    );
+                })
+                .toList();
     }
 
     /**
