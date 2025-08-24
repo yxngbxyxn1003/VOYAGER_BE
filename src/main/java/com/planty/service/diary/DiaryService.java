@@ -187,32 +187,14 @@ public class DiaryService {
                 .toList();
     }
 
-    // 내 재배일지 목록 조회 (같은 분류 작물만)
+    // 내 재배일지 목록 조회 (사용자별 모든 재배일지)
     public List<DiaryListDto> getMyDiariesByCategory(Integer userId) {
         User user = userRepository.getReferenceById(userId);
         
-        // 사용자가 등록한 작물들의 카테고리 조회
-        List<Crop> userCrops = cropRepository.findByUserAndIsRegisteredTrueOrderByCreatedAtDesc(user);
-        
-        // 사용자 작물들의 카테고리명 수집
-        Set<String> userCategories = userCrops.stream()
-                .flatMap(crop -> crop.getCategories().stream())
-                .map(category -> category.getCategoryName())
-                .collect(Collectors.toSet());
-        
-        // 같은 카테고리의 작물들을 가진 재배일지 조회
+        // 사용자의 모든 재배일지 조회 (카테고리 필터링 없음)
         List<Diary> diaries = diaryRepository.findByUserOrderByCreatedAtDesc(user);
         
         return diaries.stream()
-                .filter(diary -> {
-                    // 재배일지의 작물이 사용자가 등록한 작물과 같은 카테고리를 가지고 있는지 확인
-                    Set<String> diaryCategories = diary.getCrop().getCategories().stream()
-                            .map(category -> category.getCategoryName())
-                            .collect(Collectors.toSet());
-                    
-                    // 교집합이 있는지 확인
-                    return diaryCategories.stream().anyMatch(userCategories::contains);
-                })
                 .map(diary -> {
                     // 썸네일 이미지 찾기
                     String thumbnailImage = diary.getImages().stream()
