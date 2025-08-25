@@ -116,6 +116,15 @@ public class CropService {
                 .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
     }
 
+    /**
+     * 작물 상세 정보 조회 (사용자 정보 포함)
+     */
+    @Transactional(readOnly = true)
+    public Crop getCropByIdWithUser(Integer cropId) {
+        return cropRepository.findByIdWithUser(cropId)
+                .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
+    }
+
 
     /**
      * 작물 상세페이지에서 진단받기 (해당 cropID로 진단 진행)
