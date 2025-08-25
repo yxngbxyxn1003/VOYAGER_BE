@@ -140,7 +140,7 @@ public class AiChatService {
         Map<String, Object> requestBody = Map.of(
                 "model", "gpt-4.1",
                 "messages", List.of(
-                        Map.of("role", "system", "content", "사용자 메시지를 바탕으로 채소 키워드를 반환해 줘. 최소 3개, 최대 5개 단어를 []안에 반점으로 분리해서 넣어 줘.[버섯, 토마토, 상추] 형태로 텍스트 반환해 줘. 절대 요청한 것 이외에 다른 내용은 추가하지 마,"),
+                        Map.of("role", "system", "content", "사용자 메시지를 바탕으로 채소 키워드를 반환해 줘. 최소 3개, 최대 5개 단어를 []안에 반점으로 분리해서 넣어 줘.[버섯, 토마토, 상추] 형태로 텍스트 반환해 줘. 절대 요청한 것 이외에 다른 내용은 추가하지 마. 그리고 사용자에게 시장이나 마트 같은 다른 구매처를 추천하지 말고, 우리 어플 내 판매 게시판에서 검색하면 신선한 채소를 구매할 수 있다고 안내해 줘. "),
                         Map.of("role", "user", "content", userMessage)
                 ),
                 "max_tokens", 500,
