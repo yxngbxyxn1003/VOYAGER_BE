@@ -54,4 +54,6 @@ public interface DiaryRepository extends JpaRepository<Diary, Integer> {
     // 사용자와 특정 작물의 재배일지 목록 조회
     @EntityGraph(attributePaths = {"crop", "images"})
     List<Diary> findByUserAndCropOrderByCreatedAtDesc(User user, Crop crop);
+
+    List<Diary> findByUserOrderByCreatedAtDesc(User user);
 }
