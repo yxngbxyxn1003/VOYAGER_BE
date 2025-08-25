@@ -30,9 +30,15 @@ public class QDiary extends EntityPathBase<Diary> {
 
     public final com.planty.entity.crop.QCrop crop;
 
+    public final StringPath diagnosisData = createString("diagnosisData");
+
+    public final EnumPath<com.planty.entity.crop.AnalysisType> diagnosisType = createEnum("diagnosisType", com.planty.entity.crop.AnalysisType.class);
+
     public final NumberPath<Integer> id = createNumber("id", Integer.class);
 
     public final ListPath<DiaryImage, QDiaryImage> images = this.<DiaryImage, QDiaryImage>createList("images", DiaryImage.class, QDiaryImage.class, PathInits.DIRECT2);
+
+    public final BooleanPath includeDiagnosis = createBoolean("includeDiagnosis");
 
     public final DateTimePath<java.time.LocalDateTime> modifiedAt = createDateTime("modifiedAt", java.time.LocalDateTime.class);
 

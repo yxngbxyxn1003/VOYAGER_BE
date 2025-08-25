@@ -57,7 +57,7 @@ public class AiChatController {
             AiMessage aiMsg = aiChatService.generateAiResponse(chat, content);
 
             // 게시글 추천 추가
-            List<BoardRecDto> recommendedBoards = aiChatService.getRecommendedBoards(content);
+            String recommendedBoards = aiChatService.getRecommendedBoards(content);
             response.put("aiMessage", new AiMessageResDto(
                     aiMsg.getId(),
                     aiMsg.getContent(),
