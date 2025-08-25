@@ -79,12 +79,13 @@ public class DiaryService {
     }
 
     /**
-     * 진단결과 기반 재배일지 생성 (cropId 없이)
+     * 진단결과 기반 재배일지 생성 (cropId 포함)
      */
-    public Diary createDiagnosisBasedDiary(Integer userId, String title, String content, 
+    public Diary createDiagnosisBasedDiary(Integer userId, Integer cropId, String title, String content, 
                                          String diagnosisType, Map<String, Object> diagnosisResult, 
                                          Boolean includeDiagnosis, List<String> imageUrls) {
         User user = userRepository.getReferenceById(userId);
+        Crop crop = cropRepository.getReferenceById(cropId);
 
         // 이미지 개수 검증 (최대 9개)
         if (imageUrls != null && imageUrls.size() > 9) {
@@ -94,7 +95,7 @@ public class DiaryService {
         // 재배일지 생성
         Diary diary = new Diary();
         diary.setUser(user);
-        diary.setCrop(null); // 진단결과 기반이므로 cropId 없음
+        diary.setCrop(crop); // 진단받은 작물의 cropId 연결
         diary.setTitle(title);
         diary.setContent(content);
         
@@ -103,34 +104,13 @@ public class DiaryService {
             diary.setIncludeDiagnosis(true);
             diary.setDiagnosisType(AnalysisType.valueOf(diagnosisType));
             
-            // 진단 결과를 JSON으로 저장
+            // AI 진단 결과를 그대로 JSON으로 저장
             try {
                 String diagnosisData = objectMapper.writeValueAsString(diagnosisResult);
                 diary.setDiagnosisData(diagnosisData);
                 
-                // 진단 결과를 분석 필드에도 포함
-                StringBuilder analysisContent = new StringBuilder();
-                analysisContent.append("## AI 진단 결과\n");
-                analysisContent.append("**분석 유형:** ").append(getDiagnosisTypeName(diagnosisType)).append("\n\n");
-                
-                // 진단 결과 내용 추가
-                switch (diagnosisType) {
-                    case "CURRENT_STATUS":
-                        analysisContent.append("**현재 상태:** ").append(diagnosisResult.getOrDefault("currentStatusSummary", "")).append("\n\n");
-                        break;
-                    case "DISEASE_CHECK":
-                        analysisContent.append("**질병 상태:** ").append(diagnosisResult.getOrDefault("diseaseStatus", "")).append("\n");
-                        analysisContent.append("**상세 내용:** ").append(diagnosisResult.getOrDefault("diseaseDetails", "")).append("\n");
-                        analysisContent.append("**예방 및 치료 방법:** ").append(diagnosisResult.getOrDefault("preventionMethods", "")).append("\n\n");
-                        break;
-                    case "QUALITY_MARKET":
-                        analysisContent.append("**상품 비율:** ").append(diagnosisResult.getOrDefault("marketRatio", "")).append("\n");
-                        analysisContent.append("**색상 품질:** ").append(diagnosisResult.getOrDefault("colorUniformity", "")).append("\n");
-                        analysisContent.append("**저장성:** ").append(diagnosisResult.getOrDefault("storageEvaluation", "")).append("\n\n");
-                        break;
-                }
-                
-                diary.setAnalysis(analysisContent.toString());
+                // AI가 분석한 내용을 그대로 분석 필드에 저장 
+                diary.setAnalysis(diagnosisData);
                 
             } catch (Exception e) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "진단 결과 처리 중 오류가 발생했습니다.");
@@ -236,7 +216,7 @@ public class DiaryService {
                 .thumbnailImage(thumbnailImage)
                 .createdAt(diary.getCreatedAt())
                 .modifiedAt(diary.getModifiedAt())
-                .diaryType(getDiaryType(diary))
+                .diaryType("CROP_BASED")
                 .diagnosisType(diary.getDiagnosisType() != null ? diary.getDiagnosisType().toString() : null)
                 .includeDiagnosis(diary.getIncludeDiagnosis())
                 .build();
@@ -251,35 +231,9 @@ public class DiaryService {
                 .build();
     }
 
-    // 사용자별 재배일지 목록 조회
-    public List<DiaryListDto> getUserDiaries(Integer userId) {
-        User user = userRepository.getReferenceById(userId);
-        List<Diary> diaries = diaryRepository.findByUserOrderByCreatedAtDesc(user);
 
-        return diaries.stream()
-                .map(diary -> {
-                    // 썸네일 이미지 찾기
-                    String thumbnailImage = diary.getImages().stream()
-                            .filter(DiaryImage::getThumbnail)
-                            .map(DiaryImage::getDiaryImg)
-                            .findFirst()
-                            .orElse(null);
-
-                    return DiaryListDto.builder()
-                            .diaryId(diary.getId())
-                            .title(diary.getTitle())
-                            .cropName(diary.getCrop() != null ? diary.getCrop().getName() : "진단결과 기반")
-                            .thumbnailImage(thumbnailImage)
-                            .createdAt(diary.getCreatedAt())
-                            .diaryType(getDiaryType(diary))
-                            .diagnosisType(diary.getDiagnosisType() != null ? diary.getDiagnosisType().toString() : null)
-                            .build();
-                })
-                .toList();
-    }
-
-    // 내 재배일지 목록 조회 (사용자별 모든 재배일지)
-    public List<DiaryListDto> getMyDiariesByCategory(Integer userId) {
+    // 내 재배일지 목록 조회 (모든 재배일지)
+    public List<DiaryListDto> getMyAllDiaries(Integer userId) {
         User user = userRepository.getReferenceById(userId);
         
         // 사용자의 모든 재배일지 조회 (카테고리 필터링 없음)
@@ -303,160 +257,7 @@ public class DiaryService {
                             .cropName(diary.getCrop() != null ? diary.getCrop().getName() : "진단결과 기반")
                             .thumbnailImage(thumbnailImage)
                             .createdAt(diary.getCreatedAt())
-                            .diaryType(getDiaryType(diary))
-                            .diagnosisType(diary.getDiagnosisType() != null ? diary.getDiagnosisType().toString() : null)
-                            .build();
-                })
-                .toList();
-    }
-
-    /**
-     * 사용자별 일반 재배일지 목록 조회 (crop이 있는 경우만)
-     */
-    public List<DiaryListDto> getUserCropBasedDiaries(Integer userId) {
-        User user = userRepository.getReferenceById(userId);
-        List<Diary> diaries = diaryRepository.findByUserAndCropIsNotNullOrderByCreatedAtDesc(user);
-        
-        return diaries.stream()
-                .map(diary -> {
-                    // 썸네일 이미지 찾기
-                    String thumbnailImage = diary.getImages().stream()
-                            .filter(DiaryImage::getThumbnail)
-                            .map(DiaryImage::getDiaryImg)
-                            .findFirst()
-                            .orElse(null);
-
-                    return DiaryListDto.builder()
-                            .diaryId(diary.getId())
-                            .title(diary.getTitle())
-                            .cropName(diary.getCrop().getName())
-                            .thumbnailImage(thumbnailImage)
-                            .createdAt(diary.getCreatedAt())
                             .diaryType("CROP_BASED")
-                            .diagnosisType(null)
-                            .build();
-                })
-                .toList();
-    }
-
-    /**
-     * 사용자별 진단결과 기반 재배일지 목록 조회 (crop이 없는 경우만)
-     */
-    public List<DiaryListDto> getUserDiagnosisBasedDiaries(Integer userId) {
-        User user = userRepository.getReferenceById(userId);
-        List<Diary> diaries = diaryRepository.findByUserAndCropIsNullOrderByCreatedAtDesc(user);
-        
-        return diaries.stream()
-                .map(diary -> {
-                    // 썸네일 이미지 찾기
-                    String thumbnailImage = diary.getImages().stream()
-                            .filter(DiaryImage::getThumbnail)
-                            .map(DiaryImage::getDiaryImg)
-                            .findFirst()
-                            .orElse(null);
-
-                    return DiaryListDto.builder()
-                            .diaryId(diary.getId())
-                            .title(diary.getTitle())
-                            .cropName("진단결과 기반")
-                            .thumbnailImage(thumbnailImage)
-                            .createdAt(diary.getCreatedAt())
-                            .diaryType("DIAGNOSIS_BASED")
-                            .diagnosisType(diary.getDiagnosisType() != null ? diary.getDiagnosisType().toString() : null)
-                            .build();
-                })
-                .toList();
-    }
-
-    /**
-     * 사용자별 모든 재배일지 목록 조회 (일반 + 진단결과 기반)
-     */
-    public List<DiaryListDto> getAllUserDiaries(Integer userId) {
-        User user = userRepository.getReferenceById(userId);
-        List<Diary> diaries = diaryRepository.findByUserOrderByCreatedAtDesc(user);
-        
-        return diaries.stream()
-                .map(diary -> {
-                    // 썸네일 이미지 찾기
-                    String thumbnailImage = diary.getImages().stream()
-                            .filter(DiaryImage::getThumbnail)
-                            .map(DiaryImage::getDiaryImg)
-                            .findFirst()
-                            .orElse(null);
-
-                    // 재배일지 타입 구분
-                    String cropName;
-                    if (diary.getCrop() != null) {
-                        // 일반 재배일지 (작물 기반)
-                        cropName = diary.getCrop().getName();
-                    } else if (diary.getIncludeDiagnosis() != null && diary.getIncludeDiagnosis() && 
-                               diary.getDiagnosisType() != null) {
-                        // 진단결과 기반 재배일지
-                        cropName = "진단결과 기반 (" + getDiagnosisTypeDisplayName(diary.getDiagnosisType()) + ")";
-                    } else {
-                        // 일반 재배일지 (작물 없이 시작)
-                        cropName = "일반 재배일지";
-                    }
-
-                    return DiaryListDto.builder()
-                            .diaryId(diary.getId())
-                            .title(diary.getTitle())
-                            .cropName(cropName)
-                            .thumbnailImage(thumbnailImage)
-                            .createdAt(diary.getCreatedAt())
-                            .diaryType(getDiaryType(diary))
-                            .diagnosisType(diary.getDiagnosisType() != null ? diary.getDiagnosisType().toString() : null)
-                            .build();
-                })
-                .toList();
-    }
-
-    /**
-     * 진단 타입을 표시용 이름으로 변환
-     */
-    private String getDiagnosisTypeDisplayName(AnalysisType diagnosisType) {
-        return switch (diagnosisType) {
-            case CURRENT_STATUS -> "현재상태분석";
-            case DISEASE_CHECK -> "질병여부분석";
-            case QUALITY_MARKET -> "품질시장성분석";
-            default -> "진단분석";
-        };
-    }
-
-    /**
-     * 재배일지 타입을 판별하여 반환
-     */
-    private String getDiaryType(Diary diary) {
-        if (diary.getCrop() != null) {
-            return "CROP_BASED"; // 작물 기반 재배일지
-        } else if (diary.getIncludeDiagnosis() != null && diary.getIncludeDiagnosis() && 
-                   diary.getDiagnosisType() != null) {
-            return "DIAGNOSIS_BASED"; // 진단결과 기반 재배일지
-        } else {
-            return "GENERAL"; // 일반 재배일지 (작물 없이 시작)
-        }
-    }
-
-    // 작물별 재배일지 목록 조회
-    public List<DiaryListDto> getCropDiaries(Integer cropId) {
-        List<Diary> diaries = diaryRepository.findByCropIdOrderByCreatedAtDesc(cropId);
-
-        return diaries.stream()
-                .map(diary -> {
-                    // 썸네일 이미지 찾기
-                    String thumbnailImage = diary.getImages().stream()
-                            .filter(DiaryImage::getThumbnail)
-                            .map(DiaryImage::getDiaryImg)
-                            .findFirst()
-                            .orElse(null);
-
-                    return DiaryListDto.builder()
-                            .diaryId(diary.getId())
-                            .title(diary.getTitle())
-                            .cropName(diary.getCrop() != null ? diary.getCrop().getName() : "진단결과 기반")
-                            .thumbnailImage(thumbnailImage)
-                            .createdAt(diary.getCreatedAt())
-                            .diaryType(getDiaryType(diary))
                             .diagnosisType(diary.getDiagnosisType() != null ? diary.getDiagnosisType().toString() : null)
                             .build();
                 })

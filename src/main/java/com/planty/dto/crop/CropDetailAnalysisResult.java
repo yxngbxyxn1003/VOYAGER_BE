@@ -93,6 +93,7 @@ public class CropDetailAnalysisResult {
                     result.put("storageEvaluation", storageEvaluation);
                 }
                 break;
+                
         }
         
         return result;

@@ -98,8 +98,16 @@ public class CropService {
 
 
     /**
-     * 독립적인 작물 진단 (cropID 없이 이미지만으로 진단)
+     * 작물 상세페이지에서 진단받기 (해당 cropID로 진단 진행)
      */
+    public CropDetailAnalysisResult analyzeCropDiagnosis(Integer cropId, User user, AnalysisType analysisType, MultipartFile image) throws IOException {
+        return diagnosisAnalysisService.analyzeCropDiagnosis(cropId, user, analysisType, image);
+    }
+
+    /**
+     작물 상세페이지에서 cropID 기반 진단을 사용
+     */
+    @Deprecated
     public CropDetailAnalysisResult analyzeCropDiagnosisStandalone(User user, AnalysisType analysisType, MultipartFile image) throws IOException {
         return diagnosisAnalysisService.analyzeCropDiagnosisStandalone(user, analysisType, image);
     }
@@ -291,7 +299,7 @@ public class CropService {
      * 해당 작물 ID에 직접 연결된 재배일지 목록 조회
      */
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getCropDiariesByCategory(Integer cropId, Integer userId) {
+    public List<Map<String, Object>> getCropDiaries(Integer cropId, Integer userId) {
         Crop crop = cropRepository.findById(cropId)
                 .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
 

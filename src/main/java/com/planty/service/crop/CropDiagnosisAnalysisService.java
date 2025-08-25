@@ -4,17 +4,13 @@ import com.planty.dto.crop.CropDetailAnalysisResult;
 import com.planty.entity.crop.AnalysisType;
 import com.planty.entity.crop.Crop;
 import com.planty.service.openai.OpenAIService;
+import com.planty.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.UUID;
 
 /**
  * 작물 태그별 진단 분석 전용 서비스
@@ -26,10 +22,50 @@ import java.util.UUID;
 public class CropDiagnosisAnalysisService {
 
     private final OpenAIService openAIService;
+    private final StorageService storageService;
 
     /**
-     * 독립적인 작물 진단 (cropID 없이 이미지만으로 진단)
+     * 작물 상세페이지에서 진단받기 (해당 cropID로 진단 진행)
      */
+    public CropDetailAnalysisResult analyzeCropDiagnosis(Integer cropId, com.planty.entity.user.User user, AnalysisType analysisType, MultipartFile image) throws IOException {
+        log.info("작물 진단 시작 - 사용자: {}, 작물ID: {}, 분석타입: {}, 이미지: {} ({} bytes)", 
+            user.getNickname(), cropId, analysisType, image.getOriginalFilename(), image.getSize());
+
+        // 진단 분석 타입인지 확인
+        if (!analysisType.isDiagnosisAnalysis()) {
+            return new CropDetailAnalysisResult(false, "잘못된 분석 타입입니다. 진단 분석만 가능합니다.", analysisType);
+        }
+
+        try {
+            // 이미지 파일 저장
+            String savedImagePath = storageService.save(image, "diagnosis");
+            log.info("진단 이미지 저장 완료: {}", savedImagePath);
+
+            // OpenAI로 진단 분석 수행
+            CropDetailAnalysisResult result = openAIService.analyzeCropDetail(savedImagePath, analysisType);
+            
+            if (result.isSuccess()) {
+                log.info("작물 진단 완료 - 사용자: {}, 작물ID: {}, 분석타입: {}", 
+                    user.getNickname(), cropId, analysisType);
+            } else {
+                log.error("작물 진단 실패 - 사용자: {}, 작물ID: {}, 분석타입: {}, 오류: {}", 
+                    user.getNickname(), cropId, analysisType, result.getMessage());
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            log.error("작물 진단 중 오류 발생 - 사용자: {}, 작물ID: {}, 분석타입: {}, 이미지: {}", 
+                user.getNickname(), cropId, analysisType, image.getOriginalFilename(), e);
+            return new CropDetailAnalysisResult(false, "진단 분석 중 오류가 발생했습니다: " + e.getMessage(), analysisType);
+        }
+    }
+
+    /**
+     *
+     * 작물 상세페이지에서 cropID 기반 진단을 사용
+     */
+    @Deprecated
     public CropDetailAnalysisResult analyzeCropDiagnosisStandalone(com.planty.entity.user.User user, AnalysisType analysisType, MultipartFile image) throws IOException {
         try {
             // 진단 분석 타입인지 확인
@@ -37,22 +73,17 @@ public class CropDiagnosisAnalysisService {
                 return new CropDetailAnalysisResult(false, "잘못된 분석 타입입니다. 진단 분석만 가능합니다.", analysisType);
             }
 
-            // 이미지 파일 검증
-            if (image == null || image.isEmpty()) {
-                return new CropDetailAnalysisResult(false, "분석할 이미지가 없습니다.", analysisType);
-            }
-
             log.info("독립적인 작물 진단 시작 - 사용자: {}, 분석 타입: {}, 파일: {} (크기: {} bytes)", 
                     user.getNickname(), analysisType, image.getOriginalFilename(), image.getSize());
 
             // 이미지 파일을 임시로 저장
-            String savedImagePath = saveTemporaryImage(image);
+            String savedImagePath = storageService.save(image, "diagnosis");
 
             // OpenAI를 통한 태그별 진단 분석
             CropDetailAnalysisResult result = openAIService.analyzeCropDetail(savedImagePath, analysisType);
 
             // 임시 이미지 파일 삭제
-            deleteTemporaryImage(savedImagePath);
+            storageService.deleteByUrl(savedImagePath);
 
             if (result.isSuccess()) {
                 log.info("독립적인 작물 진단 완료 - 사용자: {}, 분석 타입: {}, 성공: {}", 
@@ -68,43 +99,6 @@ public class CropDiagnosisAnalysisService {
             log.error("독립적인 작물 진단 중 오류 발생 - 사용자: {}, 분석 타입: {}, 파일: {}", 
                     user.getNickname(), analysisType, image.getOriginalFilename(), e);
             return new CropDetailAnalysisResult(false, "진단 분석 중 오류가 발생했습니다: " + e.getMessage(), analysisType);
-        }
-    }
-
-    /**
-     * 임시 이미지 파일 저장
-     */
-    private String saveTemporaryImage(MultipartFile file) throws IOException {
-        // 임시 디렉토리 생성
-        String tempDir = System.getProperty("java.io.tmpdir") + "/planty_diagnosis";
-        Path tempPath = Paths.get(tempDir);
-        if (!Files.exists(tempPath)) {
-            Files.createDirectories(tempPath);
-        }
-
-        // 고유한 파일명 생성
-        String fileName = "diagnosis_" + UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-        Path filePath = tempPath.resolve(fileName);
-
-        // 파일 저장
-        Files.copy(file.getInputStream(), filePath);
-        log.info("임시 이미지 파일 저장 완료: {}", filePath.toString());
-
-        return filePath.toString();
-    }
-
-    /**
-     * 임시 이미지 파일 삭제
-     */
-    private void deleteTemporaryImage(String imagePath) {
-        try {
-            Path path = Paths.get(imagePath);
-            if (Files.exists(path)) {
-                Files.delete(path);
-                log.info("임시 이미지 파일 삭제 완료: {}", imagePath);
-            }
-        } catch (IOException e) {
-            log.warn("임시 이미지 파일 삭제 실패: {}", imagePath, e);
         }
     }
 }
