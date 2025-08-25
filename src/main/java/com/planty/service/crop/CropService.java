@@ -100,7 +100,7 @@ public class CropService {
      */
     @Transactional
     public Crop getCropByIdWithUser(Integer cropId) {
-        return cropRepository.findByIdWithUser(cropId)
+        return cropRepository.findById(cropId)
                 .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
     }
 
