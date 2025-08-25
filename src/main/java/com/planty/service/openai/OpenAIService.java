@@ -73,7 +73,7 @@ public class OpenAIService {
      * 작물 이미지를 분석하여 작물 정보를 반환 (작물 등록용)
      */
     public CropAnalysisResult analyzeCropImage(String imagePath) {
-        return analyzeCropImage(imagePath, AnalysisType.REGISTRATION_ANALYSIS);
+        return analyzeCropImage(imagePath, null);
     }
 
     /**
@@ -117,9 +117,32 @@ public class OpenAIService {
     }
 
     private String encodeImageToBase64(String imagePath) throws IOException {
-        File imageFile = new File(imagePath);
-        byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
-        return Base64.getEncoder().encodeToString(imageBytes);
+        try {
+            File imageFile = new File(imagePath);
+            
+            // 파일 존재 여부 확인
+            if (!imageFile.exists()) {
+                throw new IOException("이미지 파일을 찾을 수 없습니다: " + imagePath);
+            }
+            
+            // 파일 크기 확인
+            if (imageFile.length() == 0) {
+                throw new IOException("이미지 파일이 비어있습니다: " + imagePath);
+            }
+            
+            log.info("이미지 파일 인코딩 시작 - 경로: {}, 크기: {} bytes", imagePath, imageFile.length());
+            
+            byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
+            String base64String = Base64.getEncoder().encodeToString(imageBytes);
+            
+            log.info("이미지 인코딩 완료 - 크기: {} bytes, Base64 길이: {}", imageBytes.length, base64String.length());
+            
+            return base64String;
+            
+        } catch (Exception e) {
+            log.error("이미지 파일 처리 실패 - 경로: {}", imagePath, e);
+            throw new IOException("이미지 파일을 처리할 수 없습니다: " + imagePath, e);
+        }
     }
 
     /**
@@ -225,7 +248,7 @@ public class OpenAIService {
      */
     private String getSafeText(JsonNode node, String fieldName) {
         JsonNode fieldNode = node.get(fieldName);
-        return fieldNode != null ? fieldNode.asText() : "정보 없음";
+        return fieldNode != null ? fieldNode.asText() : "분석 중";
     }
 
     private String extractJsonFromContent(String content) {
@@ -286,6 +309,9 @@ public class OpenAIService {
     private String createDiagnosisRequestBody(String base64Image, AnalysisType analysisType) {
         OpenApiConfig.CropDiagnosis config = openApiConfig.getCropDiagnosis();
         String prompt = getPromptByAnalysisType(analysisType);
+        
+        // 이미지 형식 감지 (Base64 문자열의 첫 몇 바이트로 판단)
+        String mimeType = detectImageMimeType(base64Image);
 
         return String.format("""
             {
@@ -305,7 +331,7 @@ public class OpenAIService {
                             {
                                 "type": "image_url",
                                 "image_url": {
-                                    "url": "data:image/jpeg;base64,%s"
+                                    "url": "data:%s;base64,%s"
                                 }
                             }
                         ]
@@ -317,10 +343,43 @@ public class OpenAIService {
             """, 
             config.getModel(),
             prompt,
+            mimeType,
             base64Image,
             config.getMaxTokens(),
             config.getTemperature()
         );
+    }
+    
+    /**
+     * Base64 문자열로부터 이미지 MIME 타입 감지
+     */
+    private String detectImageMimeType(String base64String) {
+        try {
+            // Base64 디코딩하여 첫 몇 바이트 확인
+            byte[] imageBytes = Base64.getDecoder().decode(base64String);
+            
+            if (imageBytes.length < 4) {
+                return "image/jpeg"; // 기본값
+            }
+            
+            // 매직 바이트로 이미지 형식 판별
+            if (imageBytes[0] == (byte) 0xFF && imageBytes[1] == (byte) 0xD8) {
+                return "image/jpeg";
+            } else if (imageBytes[0] == (byte) 0x89 && imageBytes[1] == (byte) 0x50 && 
+                      imageBytes[2] == (byte) 0x4E && imageBytes[3] == (byte) 0x47) {
+                return "image/png";
+            } else if (imageBytes[0] == (byte) 0x47 && imageBytes[1] == (byte) 0x49 && 
+                      imageBytes[2] == (byte) 0x46) {
+                return "image/gif";
+            } else if (imageBytes[0] == (byte) 0x42 && imageBytes[1] == (byte) 0x4D) {
+                return "image/bmp";
+            } else {
+                return "image/jpeg"; // 기본값
+            }
+        } catch (Exception e) {
+            log.warn("이미지 형식 감지 실패, 기본값 사용: {}", e.getMessage());
+            return "image/jpeg"; // 기본값
+        }
     }
 
     /**
@@ -333,7 +392,7 @@ public class OpenAIService {
             case CURRENT_STATUS -> config.getCurrentStatusPrompt();
             case DISEASE_CHECK -> config.getDiseaseCheckPrompt();
             case QUALITY_MARKET -> config.getQualityMarketPrompt();
-            case REGISTRATION_ANALYSIS -> throw new IllegalArgumentException("재배방법 분석은 이 메서드에서 지원하지 않습니다.");
+            default -> throw new IllegalArgumentException("지원하지 않는 분석 타입입니다: " + analysisType);
         };
     }
 

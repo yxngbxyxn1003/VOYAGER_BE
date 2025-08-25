@@ -24,6 +24,9 @@ public class DiaryUpdateDto {
     // 직접 입력한 분석 내용
     private String analysis;
     
+    // AI 진단 결과 포함 여부
+    private Boolean includeDiagnosis;
+    
     // 진단 타입 (선택적)
     private String diagnosisType;
     

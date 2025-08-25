@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import com.planty.entity.diary.Diary;
 import com.planty.entity.diary.DiaryImage;
 import com.planty.repository.diary.DiaryRepository;
+import com.planty.dto.crop.CropDetailAnalysisResult;
+import com.planty.entity.crop.AnalysisType;
 
 
 @Slf4j
@@ -96,32 +98,19 @@ public class CropService {
 
 
     /**
-     * 작물 태그별 진단 분석 (현재상태, 질병여부, 품질/시장성)
+     * 작물 상세페이지에서 진단받기 (해당 cropID로 진단 진행)
      */
-    public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetail(Crop crop, com.planty.entity.crop.AnalysisType analysisType) {
-        return diagnosisAnalysisService.analyzeCropDetail(crop, analysisType);
+    public CropDetailAnalysisResult analyzeCropDiagnosis(Integer cropId, User user, AnalysisType analysisType, MultipartFile image) throws IOException {
+        return diagnosisAnalysisService.analyzeCropDiagnosis(cropId, user, analysisType, image);
     }
-/**
- * 새 이미지로 작물 태그별 진단 분석
- */
-public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetailWithNewImage(Crop crop, com.planty.entity.crop.AnalysisType analysisType, MultipartFile newImage) throws IOException {
-    // 새 이미지 파일 저장
-    String savedImagePath = registrationAnalysisService.saveImageFile(newImage);
-    log.info("새 이미지 파일 저장 완료: {}", savedImagePath);
-    
-    // 새 이미지 경로로 임시 Crop 객체 생성하여 진단 분석 수행
-    Crop tempCrop = new Crop();
-    tempCrop.setId(crop.getId());
-    tempCrop.setCropImg(savedImagePath);
-    tempCrop.setName(crop.getName());
-    tempCrop.setUser(crop.getUser());
-    
-    log.info("새 이미지로 진단 분석 시작 - 작물 ID: {}, 분석 타입: {}, 새 이미지 경로: {}", 
-            crop.getId(), analysisType, savedImagePath);
-    
-    // 새 이미지로 진단 분석 수행
-    return diagnosisAnalysisService.analyzeCropDetail(tempCrop, analysisType);
-}
+
+    /**
+     작물 상세페이지에서 cropID 기반 진단을 사용
+     */
+    @Deprecated
+    public CropDetailAnalysisResult analyzeCropDiagnosisStandalone(User user, AnalysisType analysisType, MultipartFile image) throws IOException {
+        return diagnosisAnalysisService.analyzeCropDiagnosisStandalone(user, analysisType, image);
+    }
 
     /**
      * 새로운 통합 등록 방식: 텍스트 데이터와 이미지를 한 번에 처리하여 재배방법 분석 결과 반환
@@ -310,7 +299,7 @@ public com.planty.dto.crop.CropDetailAnalysisResult analyzeCropDetailWithNewImag
      * 해당 작물 ID에 직접 연결된 재배일지 목록 조회
      */
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getCropDiariesByCategory(Integer cropId, Integer userId) {
+    public List<Map<String, Object>> getCropDiaries(Integer cropId, Integer userId) {
         Crop crop = cropRepository.findById(cropId)
                 .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
 
