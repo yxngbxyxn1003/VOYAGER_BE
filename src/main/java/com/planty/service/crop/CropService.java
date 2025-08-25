@@ -76,7 +76,7 @@ public class CropService {
     /**
      * 홈 화면용 작물 목록 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<HomeCropDto> getHomeCrop(Integer userId) {
         List<Crop> crops = cropRepository.findByUser_IdAndHarvestFalseOrderByCreatedAtDesc(userId);
         
