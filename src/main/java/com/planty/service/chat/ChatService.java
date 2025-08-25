@@ -44,6 +44,8 @@ public class ChatService {
         if (existingChat.isPresent()) {
             System.out.println("chat is already existe");
             chat = existingChat.get();
+
+            return new ChatDto(chat);
         } else {
             chat = new Chat();
             chat.setCreatedAt(LocalDateTime.now());
@@ -65,9 +67,11 @@ public class ChatService {
 
             chatUserRepository.save(cu1);
             chatUserRepository.save(cu2);
+
+            return new ChatDto(chat.getId(), cu2.getUser().getId());
         }
 
-        return new ChatDto(chat);
+
     }
 
     // 채팅 기록 조회
