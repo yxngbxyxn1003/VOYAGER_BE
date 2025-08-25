@@ -36,9 +36,4 @@ public interface CropRepository extends JpaRepository<Crop, Integer> {
     // 재배 완료된 작물 불러오기
     List<Crop> findByUser_IdAndHarvestTrueOrderByCreatedAtDesc(Integer userId);
 
-    // 작물 상세 조회 (사용자 정보 포함)
-    @Query("SELECT c FROM Crop c LEFT JOIN FETCH c.user WHERE c.id = :cropId")
-    Optional<Crop> findByIdWithUser(Integer cropId);
-
-    
 }
