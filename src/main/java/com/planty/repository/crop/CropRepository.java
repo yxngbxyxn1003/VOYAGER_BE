@@ -32,6 +32,7 @@ public interface CropRepository extends JpaRepository<Crop, Integer> {
     // 재배 완료된 작물 불러오기
     List<Crop> findByUser_IdAndHarvestTrueOrderByCreatedAtDesc(Integer userId);
 
-    // 재배 중인 작물 불러오기
+    // 재배 중인 작물 불러오기 (카테고리 정보 포함)
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"categories"})
     List<Crop> findByUser_IdAndHarvestFalseOrderByCreatedAtDesc(Integer userId);
 }
