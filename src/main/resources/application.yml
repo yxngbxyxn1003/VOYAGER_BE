@@ -65,5 +65,5 @@ ai:
     temperature: 0.1
   crop-diagnosis:
     model: gpt-4o
-    max-tokens: 1500
+    max-tokens: 12000
     temperature: 0.2
