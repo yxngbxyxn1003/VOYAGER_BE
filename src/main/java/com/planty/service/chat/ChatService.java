@@ -42,6 +42,7 @@ public class ChatService {
         Optional<Chat> existingChat = chatUserRepository.findExistingChatBetweenUsers(userId, sellerId);
         Chat chat;
         if (existingChat.isPresent()) {
+            System.out.println("chat is already existe");
             chat = existingChat.get();
         } else {
             chat = new Chat();
