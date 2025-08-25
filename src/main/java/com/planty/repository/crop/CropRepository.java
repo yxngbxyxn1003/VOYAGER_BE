@@ -19,6 +19,10 @@ public interface CropRepository extends JpaRepository<Crop, Integer> {
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"categories"})
     List<Crop> findByUserAndIsRegisteredTrueOrderByCreatedAtDesc(User user);
     
+    // 홈 화면용 작물 목록 조회 (수확하지 않은 작물만)
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"categories"})
+    List<Crop> findByUser_IdAndHarvestFalseOrderByCreatedAtDesc(Integer userId);
+    
     // 분석 상태별 작물 조회
     List<Crop> findByAnalysisStatus(AnalysisStatus status);
     
@@ -32,6 +36,9 @@ public interface CropRepository extends JpaRepository<Crop, Integer> {
     // 재배 완료된 작물 불러오기
     List<Crop> findByUser_IdAndHarvestTrueOrderByCreatedAtDesc(Integer userId);
 
-    // 재배 중인 작물 불러오기
-    List<Crop> findByUser_IdAndHarvestFalseOrderByCreatedAtDesc(Integer userId);
+    // 작물 상세 조회 (사용자 정보 포함)
+    @Query("SELECT c FROM Crop c LEFT JOIN FETCH c.user WHERE c.id = :cropId")
+    Optional<Crop> findByIdWithUser(Integer cropId);
+
+    
 }

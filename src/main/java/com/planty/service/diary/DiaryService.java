@@ -177,6 +177,42 @@ public class DiaryService {
                 .toList();
     }
 
+    // 작물별 재배일지 목록 조회
+    public List<DiaryListDto> getCropDiaries(Integer cropId, Integer userId) {
+        // 작물 존재 여부 및 권한 확인
+        Crop crop = cropRepository.findById(cropId)
+                .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
+        
+        // 권한 확인
+        if (!crop.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("권한이 없습니다.");
+        }
+        
+        // 해당 작물의 재배일지 목록 조회
+        List<Diary> diaries = diaryRepository.findByCropIdOrderByCreatedAtDesc(cropId);
+        
+        return diaries.stream()
+                .map(diary -> {
+                    // 썸네일 이미지 찾기
+                    String thumbnailImage = diary.getImages().stream()
+                            .filter(DiaryImage::getThumbnail)
+                            .map(DiaryImage::getDiaryImg)
+                            .findFirst()
+                            .orElse(null);
+
+                    return DiaryListDto.builder()
+                            .diaryId(diary.getId())
+                            .title(diary.getTitle())
+                            .cropName(diary.getCrop() != null ? diary.getCrop().getName() : "진단결과 기반")
+                            .thumbnailImage(thumbnailImage)
+                            .createdAt(diary.getCreatedAt())
+                            .diaryType("CROP_BASED")
+                            .diagnosisType(diary.getDiagnosisType() != null ? diary.getDiagnosisType().toString() : null)
+                            .build();
+                })
+                .toList();
+    }
+
     // 재배일지 상세 조회
     public DiaryDetailResDto getDiaryDetail(Integer id, Integer meId) {
         Diary diary = diaryRepository.findById(id)

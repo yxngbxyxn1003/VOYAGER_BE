@@ -70,7 +70,7 @@ public class CropController {
 
         try {
             User user = userService.findById(userDetails.getId());
-            Crop crop = cropService.getCropById(cropId);
+            Crop crop = cropService.getCropByIdWithUser(cropId);
 
             // 권한 확인
             if (!crop.getUser().getId().equals(user.getId())) {
@@ -262,7 +262,7 @@ public class CropController {
             User user = userService.findById(userDetails.getId());
             
             // 작물 존재 여부 및 권한 확인
-            Crop crop = cropService.getCropById(cropId);
+            Crop crop = cropService.getCropByIdWithUser(cropId);
             if (!crop.getUser().getId().equals(user.getId())) {
                 return ResponseEntity.status(403)
                     .body(Map.of(
@@ -313,7 +313,7 @@ public class CropController {
             User user = userService.findById(userDetails.getId());
             
             // 작물 존재 여부 및 권한 확인
-            Crop crop = cropService.getCropById(cropId);
+            Crop crop = cropService.getCropByIdWithUser(cropId);
             if (!crop.getUser().getId().equals(user.getId())) {
                 response.put("success", false);
                 response.put("message", "권한이 없습니다.");
