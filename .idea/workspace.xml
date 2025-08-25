@@ -9,6 +9,7 @@
       <change beforePath="$PROJECT_DIR$/.idea/modules/VOYAGER_BE.test.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules/VOYAGER_BE.test.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
 
+
       <change beforePath="$PROJECT_DIR$/build/classes/java/main/META-INF/spring-configuration-metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/META-INF/spring-configuration-metadata.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/chat/ChatController.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/chat/ChatController.class" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/diary/DiaryController.class" beforeDir="false" afterPath="$PROJECT_DIR$/build/classes/java/main/com/planty/controller/diary/DiaryController.class" afterDir="false" />
@@ -24,6 +25,7 @@
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/repository/diary/DiaryRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/repository/diary/DiaryRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/diary/DiaryService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/diary/DiaryService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planty/service/openai/OpenAIService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planty/service/openai/OpenAIService.java" afterDir="false" />
+
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,6 +53,13 @@
         </projects_view>
       </state>
     </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -101,10 +110,12 @@
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
     "project.structure.last.edited": "모듈",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "advanced.settings"
+    "settings.editor.selected.configurable": "advanced.settings",
+    "vue.rearranger.settings.migration": "true"
   },
   "keyToStringList": {
     "com.intellij.ide.scratch.ScratchImplUtil$2/새 스크래치 파일": [
@@ -141,6 +152,7 @@
       <option name="presentableId" value="Default" />
       <updated>1754736053154</updated>
       <workItem from="1756058628630" duration="1954000" />
+      <workItem from="1756106583229" duration="1054000" />
     </task>
     <servers />
   </component>
