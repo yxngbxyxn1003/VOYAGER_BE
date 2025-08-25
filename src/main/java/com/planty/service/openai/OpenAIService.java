@@ -118,19 +118,21 @@ public class OpenAIService {
 
     private String encodeImageToBase64(String imagePath) throws IOException {
         try {
-            File imageFile = new File(imagePath);
+            // 상대경로를 절대경로로 변환
+            String absolutePath = convertToAbsolutePath(imagePath);
+            File imageFile = new File(absolutePath);
             
             // 파일 존재 여부 확인
             if (!imageFile.exists()) {
-                throw new IOException("이미지 파일을 찾을 수 없습니다: " + imagePath);
+                throw new IOException("이미지 파일을 찾을 수 없습니다: " + absolutePath);
             }
             
             // 파일 크기 확인
             if (imageFile.length() == 0) {
-                throw new IOException("이미지 파일이 비어있습니다: " + imagePath);
+                throw new IOException("이미지 파일이 비어있습니다: " + absolutePath);
             }
             
-            log.info("이미지 파일 인코딩 시작 - 경로: {}, 크기: {} bytes", imagePath, imageFile.length());
+            log.info("이미지 파일 인코딩 시작 - 경로: {}, 크기: {} bytes", absolutePath, imageFile.length());
             
             byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
             String base64String = Base64.getEncoder().encodeToString(imageBytes);
@@ -394,6 +396,28 @@ public class OpenAIService {
             case QUALITY_MARKET -> config.getQualityMarketPrompt();
             default -> throw new IllegalArgumentException("지원하지 않는 분석 타입입니다: " + analysisType);
         };
+    }
+
+    /**
+     * 상대경로를 절대경로로 변환하는 메서드
+     */
+    private String convertToAbsolutePath(String relativePath) {
+        try {
+            // 현재 작업 디렉토리를 기준으로 uploads 폴더 경로 생성
+            String currentDir = System.getProperty("user.dir");
+            String uploadDir = currentDir + "/uploads";
+
+            // 상대경로에서 uploads/ 부분을 실제 업로드 디렉토리로 변환
+            String absolutePath = relativePath.replaceFirst("^uploads/", uploadDir + "/");
+
+            log.info("경로 변환 - 상대경로: {}, 절대경로: {}", relativePath, absolutePath);
+
+            return absolutePath;
+        } catch (Exception e) {
+            log.error("경로 변환 실패 - 상대경로: {}", relativePath, e);
+            // 변환 실패 시 원본 경로 반환
+            return relativePath;
+        }
     }
 
     /**
