@@ -109,8 +109,8 @@ public class DiaryController {
         // 권한이 없을 때
         if (me == null) return ResponseEntity.status(401).build();
 
-        // 내 재배일지 목록 가져오기 (같은 분류 작물만)
-        List<DiaryListDto> diaries = diaryService.getMyDiariesByCategory(me.getId());
+        // 내 재배일지 목록 가져오기 (모든 재배일지)
+        List<DiaryListDto> diaries = diaryService.getMyAllDiaries(me.getId());
 
         return ResponseEntity.ok(diaries);
     }
@@ -124,8 +124,9 @@ public class DiaryController {
         // 권한이 없을 때
         if (me == null) return ResponseEntity.status(401).build();
 
-        // 작물별 재배일지 목록 가져오기
-        List<DiaryListDto> diaries = diaryService.getCropDiaries(cropId);
+        // 작물별 재배일지 목록 가져오기 (현재는 DiaryService에 해당 메서드가 없음)
+        // TODO: DiaryService에 getCropDiaries 메서드 추가 필요
+        List<DiaryListDto> diaries = new ArrayList<>();
 
         return ResponseEntity.ok(diaries);
     }

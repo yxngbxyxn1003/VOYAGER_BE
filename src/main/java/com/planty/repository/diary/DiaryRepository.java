@@ -2,6 +2,7 @@ package com.planty.repository.diary;
 
 import com.planty.entity.diary.Diary;
 import com.planty.entity.user.User;
+import com.planty.entity.crop.Crop;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,17 +19,13 @@ public interface DiaryRepository extends JpaRepository<Diary, Integer> {
     @EntityGraph(attributePaths = {"user", "crop", "images"})
     Optional<Diary> findById(Integer id);
     
-    // 사용자별 재배일지 목록 조회 (최신순) - crop이 null인 경우도 포함
-    @EntityGraph(attributePaths = {"crop", "images"})
-    List<Diary> findByUserOrderByCreatedAtDesc(User user);
+    
     
     // 작물별 재배일지 목록 조회 (최신순) - crop이 null인 경우는 제외
     @EntityGraph(attributePaths = {"user", "crop", "images"})
     List<Diary> findByCropIdOrderByCreatedAtDesc(Integer cropId);
     
-    // 사용자별 재배일지 목록 조회 (같은 분류 작물만) - crop이 null인 경우는 제외
-    @EntityGraph(attributePaths = {"crop", "images"})
-    List<Diary> findByUserAndCropNameInOrderByCreatedAtDesc(User user, List<String> cropNames);
+   
     
     // 카테고리 기반으로 재배일지 검색 (JPQL 사용) - crop이 null인 경우는 제외
     @Query("SELECT d FROM Diary d " +
@@ -53,4 +50,8 @@ public interface DiaryRepository extends JpaRepository<Diary, Integer> {
     // 사용자별 일반 재배일지 목록 조회 (crop이 null이 아닌 경우만)
     @EntityGraph(attributePaths = {"crop", "images"})
     List<Diary> findByUserAndCropIsNotNullOrderByCreatedAtDesc(User user);
+    
+    // 사용자와 특정 작물의 재배일지 목록 조회
+    @EntityGraph(attributePaths = {"crop", "images"})
+    List<Diary> findByUserAndCropOrderByCreatedAtDesc(User user, Crop crop);
 }
