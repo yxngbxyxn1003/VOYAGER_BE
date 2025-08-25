@@ -124,11 +124,13 @@ public class DiaryController {
         // 권한이 없을 때
         if (me == null) return ResponseEntity.status(401).build();
 
-        // 작물별 재배일지 목록 가져오기 (현재는 DiaryService에 해당 메서드가 없음)
-        // TODO: DiaryService에 getCropDiaries 메서드 추가 필요
-        List<DiaryListDto> diaries = new ArrayList<>();
-
-        return ResponseEntity.ok(diaries);
+        try {
+            // 작물별 재배일지 목록 가져오기
+            List<DiaryListDto> diaries = diaryService.getCropDiaries(cropId, me.getId());
+            return ResponseEntity.ok(diaries);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     // 재배일지 수정

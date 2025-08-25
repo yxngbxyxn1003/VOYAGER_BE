@@ -80,41 +80,31 @@ public class CropService {
     public List<HomeCropDto> getHomeCrop(Integer userId) {
         List<Crop> crops = cropRepository.findByUser_IdAndHarvestFalseOrderByCreatedAtDesc(userId);
         
-        // 카테고리 정보를 명시적으로 로드하고 없으면 생성
-        crops.forEach(crop -> {
-            if (crop.getCategories() == null || crop.getCategories().isEmpty()) {
-                // 작물 이름에 따라 적절한 카테고리 설정
-                List<CropCategory> defaultCategories = new ArrayList<>();
-                CropCategory defaultCategory = new CropCategory();
-                
-                String categoryName = getCategoryByCropName(crop.getName());
-                defaultCategory.setCategoryName(categoryName);
-                defaultCategory.setCrop(crop);
-                defaultCategories.add(defaultCategory);
-                crop.setCategories(defaultCategories);
-                
-                // DB에 카테고리 저장
-                cropRepository.save(crop);
-            }
-        });
-        
+        // 카테고리 생성 로직 완전 제거
         return crops.stream()
                 .map(HomeCropDto::of)
-                .map(dto -> {
-                    // 이미지 URL을 그대로 사용 (변환 없음)
-                    return dto;
-                })
                 .toList();
     }
 
     /**
-     * 작물 상세 정보 조회
+     * 작물 상세 정보 조회 (기본)
      */
     @Transactional(readOnly = true)
     public Crop getCropById(Integer cropId) {
         return cropRepository.findById(cropId)
                 .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
     }
+
+    /**
+     * 작물 상세 정보 조회 (사용자 정보 포함)
+     */
+    @Transactional
+    public Crop getCropByIdWithUser(Integer cropId) {
+        return cropRepository.findByIdWithUser(cropId)
+                .orElseThrow(() -> new IllegalArgumentException("작물을 찾을 수 없습니다."));
+    }
+
+  
 
 
     /**
@@ -166,9 +156,27 @@ public class CropService {
 
             // 최종 등록 완료 처리
             tempCrop.setIsRegistered(true);
+            
+            // 작물 이름에 따른 카테고리 생성
+            if (tempCrop.getCategories() == null || tempCrop.getCategories().isEmpty()) {
+                String categoryName = getCategoryByCropName(tempCrop.getName());
+                
+                // 새로운 카테고리 생성
+                CropCategory defaultCategory = new CropCategory();
+                defaultCategory.setCategoryName(categoryName);
+                defaultCategory.setCrop(tempCrop);
+                
+                // 카테고리를 Crop의 컬렉션에 추가
+                if (tempCrop.getCategories() == null) {
+                    tempCrop.setCategories(new ArrayList<>());
+                }
+                tempCrop.getCategories().add(defaultCategory);
+            }
+            
             Crop finalCrop = cropRepository.save(tempCrop);
 
-            log.info("작물 최종 등록 완료: Crop ID {}", finalCrop.getId());
+            log.info("작물 최종 등록 완료: Crop ID {}, 카테고리: {}", finalCrop.getId(), 
+                    finalCrop.getCategories().stream().map(CropCategory::getCategoryName).toList());
 
             return finalCrop;
 
