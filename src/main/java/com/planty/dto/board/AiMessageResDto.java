@@ -16,5 +16,5 @@ public class AiMessageResDto {
     private String sender;
     private LocalDateTime createdAt;
     private String aiImage;
-    private List<BoardRecDto> recommendedBoards;
+    private String recommendedBoards;
 }

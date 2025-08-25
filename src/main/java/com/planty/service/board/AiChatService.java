@@ -89,11 +89,15 @@ public class AiChatService {
     }
 
     // 추천 검색어만 반환
-    public List<BoardRecDto> getRecommendedBoards(String keyword) {
-        return boardRepository.findByCropCategoryName(keyword).stream()
-                .limit(5)
-                .map(board -> new BoardRecDto(board.getTitle()))
-                .toList();
+    public String getRecommendedBoards(String keyword) {
+
+        String list = callOpenAiforKword(keyword);
+
+        return list;
+//        return boardRepository.findByCropCategoryName(keyword).stream()
+//                .limit(5)
+//                .map(board -> new BoardRecDto(board.getTitle()))
+//                .toList();
     }
 
 
@@ -127,6 +131,34 @@ public class AiChatService {
 
         List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
         Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+        return (String) message.get("content");
+    }
+
+    // WebClient로 OpenAI GPT-4.1 호출 for 태그 반환
+    @SuppressWarnings("unchecked")
+    public String callOpenAiforKword(String userMessage) {
+        Map<String, Object> requestBody = Map.of(
+                "model", "gpt-4.1",
+                "messages", List.of(
+                        Map.of("role", "system", "content", "사용자 메시지를 바탕으로 채소 키워드를 반환해 줘. 최소 3개, 최대 5개 단어를 []안에 반점으로 분리해서 넣어 줘.[버섯, 토마토, 상추] 형태로 텍스트 반환해 줘. 절대 요청한 것 이외에 다른 내용은 추가하지 마,"),
+                        Map.of("role", "user", "content", userMessage)
+                ),
+                "max_tokens", 500,
+                "temperature", 0.7
+        );
+
+        Map<String, Object> response = webClient.post()
+                .uri("https://api.openai.com/v1/chat/completions")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .block();
+
+        List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
+        Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+        System.out.println((String) message.get("content"));
         return (String) message.get("content");
     }
 }
