@@ -27,6 +27,9 @@ import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import com.planty.dto.diary.DiaryFormDto;
+import com.planty.entity.diary.Diary;
+import com.planty.service.diary.DiaryService;
 
 @Slf4j
 @RestController
@@ -37,6 +40,7 @@ public class CropController {
     private final CropService cropService;
     private final UserService userService;
     private final ObjectMapper objectMapper;
+    private final DiaryService diaryService;
 
     /**
      * 작물 목록 페이지
@@ -88,7 +92,7 @@ public class CropController {
             cropInfo.put("harvest", crop.getHarvest());
 
             // 같은 종류 작물의 재배일지 목록 조회
-            List<Map<String, Object>> cropDiaries = cropService.getCropDiariesByCategory(cropId, user.getId());
+            List<Map<String, Object>> cropDiaries = cropService.getCropDiaries(cropId, user.getId());
 
             response.put("success", true);
             response.put("crop", cropInfo);
@@ -145,7 +149,7 @@ public class CropController {
             Map<String, Object> response = new LinkedHashMap<>();
             response.put("success", true);
             response.put("message", "재배방법 분석이 완료되었습니다. 최종 등록을 진행해주세요.");
-            response.put("analysisType", "REGISTRATION_ANALYSIS");
+            response.put("analysisType", "재배방법 분석");
             response.put("cropData", Map.of(
                 "name", cropData.getName(),
                 "startAt", cropData.getStartAt(),
@@ -244,124 +248,126 @@ public class CropController {
     }
 
     /**
-     * 작물 태그별 진단 페이지 정보 조회 (진단할 작물 정보 + 태그 선택 UI)
+     * 작물 상세페이지에서 진단받기 위한 태그 선택 정보 조회
      */
-    @GetMapping("/{cropId}/diagnosis")
+    @GetMapping("/{cropId}/diagnosis/tags")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> getCropDiagnosisPage(
+    public ResponseEntity<Map<String, Object>> getDiagnosisTags(
             @PathVariable Integer cropId,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        Map<String, Object> response = new LinkedHashMap<>();
+
+        try {
+            User user = userService.findById(userDetails.getId());
+            
+            // 작물 존재 여부 및 권한 확인
+            Crop crop = cropService.getCropById(cropId);
+            if (!crop.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(403)
+                    .body(Map.of(
+                        "success", false,
+                        "message", "권한이 없습니다."
+                    ));
+            }
+
+            // 진단 가능한 태그들 (CURRENT_STATUS, DISEASE_CHECK, QUALITY_MARKET)
+            Map<String, String> diagnosisTags = new LinkedHashMap<>();
+            diagnosisTags.put(AnalysisType.CURRENT_STATUS.name(), "현재상태분석");
+            diagnosisTags.put(AnalysisType.DISEASE_CHECK.name(), "질병여부");
+            diagnosisTags.put(AnalysisType.QUALITY_MARKET.name(), "시장성");
+
+            response.put("success", true);
+            response.put("cropId", cropId);
+            response.put("cropName", crop.getName());
+            response.put("analysisType", "DIAGNOSIS_ANALYSIS");
+            response.put("diagnosisTags", diagnosisTags);
+            response.put("message", "진단할 태그를 선택해주세요.");
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("진단 태그 정보 조회 실패 - Crop ID: {}", cropId, e);
+            response.put("success", false);
+            response.put("message", "진단 태그 정보 조회에 실패했습니다: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 작물 상세페이지에서 진단받기 (해당 cropID로 진단 진행)
+     */
+    @PostMapping(value = "/{cropId}/diagnosis")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> analyzeCropDiagnosis(
+            @PathVariable Integer cropId,
+            @RequestParam("image") MultipartFile image,
+            @RequestParam("analysisType") String analysisType,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Map<String, Object> response = new LinkedHashMap<>();
 
         try {
-            User user = userService.findById(userDetails.getId());
-            Crop crop = cropService.getCropById(cropId);
+            // 이미지 검증 제거 - 어떤 이미지든 허용
 
-            // 권한 확인
+            User user = userService.findById(userDetails.getId());
+            
+            // 작물 존재 여부 및 권한 확인
+            Crop crop = cropService.getCropById(cropId);
             if (!crop.getUser().getId().equals(user.getId())) {
                 response.put("success", false);
                 response.put("message", "권한이 없습니다.");
                 return ResponseEntity.status(403).body(response);
             }
 
-            // 등록된 작물만 진단 가능
-            if (!crop.getIsRegistered()) {
-                response.put("success", false);
-                response.put("message", "등록되지 않은 작물은 진단할 수 없습니다.");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            // 작물 정보
-            Map<String, Object> cropInfo = new LinkedHashMap<>();
-            cropInfo.put("id", crop.getId());
-            cropInfo.put("name", crop.getName());
-            cropInfo.put("cropImg", crop.getCropImg());
-            cropInfo.put("startAt", crop.getStartAt());
-            cropInfo.put("endAt", crop.getEndAt());
-
-            // 태그별 진단 옵션들 (DIAGNOSIS_ANALYSIS 타입들)
-            Map<String, String> diagnosisOptions = new LinkedHashMap<>();
-            diagnosisOptions.put("CURRENT_STATUS", "현재상태분석");
-            diagnosisOptions.put("DISEASE_CHECK", "질병여부");
-            diagnosisOptions.put("QUALITY_MARKET", "시장성");
-
-            response.put("success", true);
-            response.put("analysisType", "DIAGNOSIS_ANALYSIS");  // AI 분석 타입 명시
-            response.put("crop", cropInfo);
-            response.put("diagnosisOptions", diagnosisOptions);
-            response.put("message", "진단할 태그를 선택해주세요.");
-
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            log.error("작물 태그별 진단 페이지 조회 실패", e);
-            response.put("success", false);
-            response.put("message", "정보 조회에 실패했습니다: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-
-    /**
-     * 작물 태그별 진단 실행 (새 이미지 업로드)
-     */
-    @PostMapping(value = "/{cropId}/diagnosis/{analysisType}/with-image")
-    @ResponseBody
-    public ResponseEntity<CropDetailAnalysisResult> analyzeCropDiagnosisWithNewImage(
-            @PathVariable Integer cropId,
-            @PathVariable String analysisType,
-            @RequestParam("newImage") MultipartFile newImage,
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-
-        try {
             // AnalysisType enum으로 변환
             AnalysisType analysisTypeEnum;
             try {
                 analysisTypeEnum = AnalysisType.valueOf(analysisType);
             } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest()
-                    .body(new CropDetailAnalysisResult(false, "잘못된 진단 타입입니다: " + analysisType, null));
-            }
-            
-            User user = userService.findById(userDetails.getId());
-            Crop crop = cropService.getCropById(cropId);
-
-            // 권한 확인
-            if (!crop.getUser().getId().equals(user.getId())) {
-                return ResponseEntity.status(403)
-                    .body(new CropDetailAnalysisResult(false, "권한이 없습니다.", analysisTypeEnum));
+                response.put("success", false);
+                response.put("message", "잘못된 진단 타입입니다: " + analysisType);
+                return ResponseEntity.badRequest().body(response);
             }
 
-            // 등록된 작물만 진단 가능
-            if (!crop.getIsRegistered()) {
-                return ResponseEntity.badRequest()
-                    .body(new CropDetailAnalysisResult(false, "등록되지 않은 작물은 진단할 수 없습니다.", analysisTypeEnum));
-            }
-
-            // 진단 분석 타입인지 확인
+            // 진단 분석 타입인지 확인 (CURRENT_STATUS, DISEASE_CHECK, QUALITY_MARKET만 허용)
             if (!analysisTypeEnum.isDiagnosisAnalysis()) {
-                return ResponseEntity.badRequest()
-                    .body(new CropDetailAnalysisResult(false, "잘못된 진단 타입입니다.", analysisTypeEnum));
+                response.put("success", false);
+                response.put("message", "잘못된 진단 타입입니다. 진단 분석만 가능합니다.");
+                return ResponseEntity.badRequest().body(response);
             }
 
-            // 새 이미지로 진단 수행
-            CropDetailAnalysisResult result = cropService.analyzeCropDetailWithNewImage(crop, analysisTypeEnum, newImage);
+            // 해당 cropID로 진단 수행
+            CropDetailAnalysisResult result = cropService.analyzeCropDiagnosis(cropId, user, analysisTypeEnum, image);
 
-            return ResponseEntity.ok(result);
+            if (result.isSuccess()) {
+                response.put("success", true);
+                response.put("message", "작물 진단이 완료되었습니다.");
+                response.put("cropId", cropId);
+                response.put("analysisType", analysisType);
+                response.put("diagnosisResult", result.getAnalysisResult());
+            } else {
+                response.put("success", false);
+                response.put("message", result.getAnalysisMessage());
+            }
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("새 이미지로 작물 진단 실패", e);
-            return ResponseEntity.badRequest()
-                .body(new CropDetailAnalysisResult(false, "진단에 실패했습니다: " + e.getMessage(), null));
+            log.error("작물 진단 실패 - Crop ID: {}, 오류: {}", cropId, e.getMessage(), e);
+            response.put("success", false);
+            response.put("message", "진단에 실패했습니다. 잠시 후 다시 시도해주세요.");
+            return ResponseEntity.status(500).body(response);
         }
     }
 
+
     /**
-     * 진단 결과를 바탕으로 재배일지 작성 폼 데이터 조회
+     * 진단결과 기반 재배일지 생성 (진단 완료 후 재배일지 작성)
      */
-    @PostMapping("/diagnosis-to-diary")
+    @PostMapping("/diagnosis-diary/create")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> createDiaryWithDiagnosis(
+    public ResponseEntity<Map<String, Object>> createDiagnosisBasedDiary(
             @RequestBody Map<String, Object> request,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
@@ -369,76 +375,42 @@ public class CropController {
 
         try {
             User user = userService.findById(userDetails.getId());
-            Integer cropId = (Integer) request.get("cropId");
+            String title = (String) request.get("title");
+            String content = (String) request.get("content");
             String diagnosisType = (String) request.get("diagnosisType");
             @SuppressWarnings("unchecked")
             Map<String, Object> diagnosisResult = (Map<String, Object>) request.get("diagnosisResult");
+            Boolean includeDiagnosis = (Boolean) request.get("includeDiagnosis");
+            @SuppressWarnings("unchecked")
+            List<String> imageUrls = (List<String>) request.get("imageUrls");
 
-            Crop crop = cropService.getCropById(cropId);
-
-            // 권한 확인
-            if (!crop.getUser().getId().equals(user.getId())) {
+            // cropId 추출 (진단 결과에서)
+            Integer cropId = (Integer) request.get("cropId");
+            if (cropId == null) {
                 response.put("success", false);
-                response.put("message", "권한이 없습니다.");
-                return ResponseEntity.status(403).body(response);
+                response.put("message", "작물 ID가 필요합니다.");
+                return ResponseEntity.badRequest().body(response);
             }
 
-            // 작물 정보
-            Map<String, Object> cropInfo = new LinkedHashMap<>();
-            cropInfo.put("id", crop.getId());
-            cropInfo.put("name", crop.getName());
-            cropInfo.put("cropImg", crop.getCropImg());
-
-            // 진단 결과를 재배일지 템플릿으로 변환
-            String diaryTemplate = createDiaryTemplate(diagnosisType, diagnosisResult);
+            // DiaryService를 사용하여 진단결과 기반 재배일지 생성
+            Diary createdDiary = diaryService.createDiagnosisBasedDiary(
+                user.getId(), cropId, title, content, diagnosisType, 
+                diagnosisResult, includeDiagnosis, imageUrls
+            );
 
             response.put("success", true);
-            response.put("crop", cropInfo);
-            response.put("diagnosisType", diagnosisType);
-            response.put("diagnosisResult", diagnosisResult);
-            response.put("diaryTemplate", diaryTemplate);
-            response.put("message", "재배일지 작성 준비가 완료되었습니다.");
+            response.put("message", "진단결과 기반 재배일지가 생성되었습니다.");
+            response.put("diaryId", createdDiary.getId());
+            response.put("diaryTitle", createdDiary.getTitle());
 
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("진단 결과 기반 재배일지 준비 실패", e);
+            log.error("진단결과 기반 재배일지 생성 실패", e);
             response.put("success", false);
-            response.put("message", "재배일지 준비에 실패했습니다: " + e.getMessage());
+            response.put("message", "재배일지 생성에 실패했습니다: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
-    }
-
-    /**
-     * 진단 결과를 재배일지 템플릿으로 변환
-     */
-    private String createDiaryTemplate(String diagnosisType, Map<String, Object> diagnosisResult) {
-        StringBuilder template = new StringBuilder();
-        template.append("# AI 진단 결과 기반 재배일지\n\n");
-
-        switch (diagnosisType) {
-            case "CURRENT_STATUS":
-                template.append("## 현재 상태 분석\n");
-                template.append(diagnosisResult.getOrDefault("currentStatusSummary", "분석 결과 없음"));
-                break;
-            case "DISEASE_CHECK":
-                template.append("## 질병 진단 결과\n");
-                template.append("**질병 상태:** ").append(diagnosisResult.getOrDefault("diseaseStatus", "")).append("\n");
-                template.append("**상세 내용:** ").append(diagnosisResult.getOrDefault("diseaseDetails", "")).append("\n");
-                template.append("**예방 및 치료 방법:** ").append(diagnosisResult.getOrDefault("preventionMethods", "")).append("\n");
-                break;
-            case "QUALITY_MARKET":
-                template.append("## 품질 및 시장성 분석\n");
-                template.append("**상품 비율:** ").append(diagnosisResult.getOrDefault("marketRatio", "")).append("\n");
-                template.append("**색상 품질:** ").append(diagnosisResult.getOrDefault("colorUniformity", "")).append("\n");
-                template.append("**저장성:** ").append(diagnosisResult.getOrDefault("storageEvaluation", "")).append("\n");
-                break;
-        }
-
-        template.append("\n\n## 오늘의 관찰 사항\n");
-        template.append("(여기에 오늘 관찰한 내용을 추가로 작성해주세요)\n\n");
-
-        return template.toString();
     }
 
     /**
@@ -502,22 +474,9 @@ public class CropController {
                 updateDto = objectMapper.readValue(cropDataJson, CropRegistrationDto.class);
             }
             
-            // 이미지 파일이 있는 경우 이미지 업데이트
+            // 이미지 파일이 있는 경우 이미지 업데이트 (검증 없음)
             if (imageFile != null && !imageFile.isEmpty()) {
-                // 파일 크기 검증 (10MB 제한)
-                if (imageFile.getSize() > 10 * 1024 * 1024) {
-                    response.put("success", false);
-                    response.put("message", "이미지 파일 크기는 10MB 이하여야 합니다.");
-                    return ResponseEntity.badRequest().body(response);
-                }
-
-                // 파일 형식 검증
-                String contentType = imageFile.getContentType();
-                if (contentType == null || !contentType.startsWith("image/")) {
-                    response.put("success", false);
-                    response.put("message", "이미지 파일만 업로드 가능합니다.");
-                    return ResponseEntity.badRequest().body(response);
-                }
+                // 이미지 검증 제거 - 어떤 이미지든 허용
             }
             
             // 작물 정보 업데이트 (이미지 포함)

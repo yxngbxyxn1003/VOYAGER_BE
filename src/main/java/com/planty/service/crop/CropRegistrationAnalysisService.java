@@ -50,8 +50,8 @@ public class CropRegistrationAnalysisService {
                 crop.setAnalysisStatus(AnalysisStatus.ANALYZING);
                 cropRepository.save(crop);
 
-                // OpenAI로 재배방법 분석 (REGISTRATION_ANALYSIS)
-                CropAnalysisResult analysisResult = openAIService.analyzeCropImage(imagePath, com.planty.entity.crop.AnalysisType.REGISTRATION_ANALYSIS);
+                // OpenAI로 재배방법 분석
+                CropAnalysisResult analysisResult = openAIService.analyzeCropImage(imagePath);
 
                 // 분석 결과로 작물 정보 업데이트
                 if (analysisResult.isSuccess()) {
@@ -106,8 +106,8 @@ public class CropRegistrationAnalysisService {
             // 3. 임시로 DB에 저장 (분석 완료 후 삭제 예정)
             Crop savedTempCrop = cropRepository.save(tempCrop);
 
-            // 4. 동기적으로 재배방법 분석 수행 (REGISTRATION_ANALYSIS)
-            CropAnalysisResult analysisResult = openAIService.analyzeCropImage(savedImagePath, com.planty.entity.crop.AnalysisType.REGISTRATION_ANALYSIS);
+            // 4. 동기적으로 재배방법 분석 수행
+            CropAnalysisResult analysisResult = openAIService.analyzeCropImage(savedImagePath);
 
             // 5. 분석 결과 처리
             if (analysisResult.isSuccess()) {
@@ -124,21 +124,29 @@ public class CropRegistrationAnalysisService {
                 // null이 아닌 필드들만 결과에 포함
                 result.put("tempCropId", savedTempCrop.getId());
                 result.put("analysisSuccess", true);
-                result.put("analysisType", "REGISTRATION_ANALYSIS");
+                result.put("analysisType", "재배방법 분석");
                 result.put("message", "재배방법 분석이 완료되었습니다.");
                 
                 // null이 아닌 분석 결과만 포함
                 if (analysisResult.getEnvironment() != null && !analysisResult.getEnvironment().trim().isEmpty()) {
                     result.put("environment", analysisResult.getEnvironment());
+                } else {
+                    result.put("environment", "분석 중");
                 }
                 if (analysisResult.getTemperature() != null && !analysisResult.getTemperature().trim().isEmpty()) {
                     result.put("temperature", analysisResult.getTemperature());
+                } else {
+                    result.put("temperature", "분석 중");
                 }
                 if (analysisResult.getHeight() != null && !analysisResult.getHeight().trim().isEmpty()) {
                     result.put("height", analysisResult.getHeight());
+                } else {
+                    result.put("height", "분석 중");
                 }
                 if (analysisResult.getHowTo() != null && !analysisResult.getHowTo().trim().isEmpty()) {
                     result.put("howTo", analysisResult.getHowTo());
+                } else {
+                    result.put("howTo", "분석 중");
                 }
 
             } else {
@@ -147,7 +155,7 @@ public class CropRegistrationAnalysisService {
                 
                 result.put("tempCropId", null);
                 result.put("analysisSuccess", false);
-                result.put("analysisType", "REGISTRATION_ANALYSIS");
+                result.put("analysisType", "재배방법 분석");
                 result.put("message", "재배방법 분석에 실패했습니다: " + analysisResult.getAnalysisMessage());
             }
 
@@ -155,7 +163,7 @@ public class CropRegistrationAnalysisService {
             log.error("재배방법 분석 중 오류 발생", e);
             result.put("tempCropId", null);
             result.put("analysisSuccess", false);
-            result.put("analysisType", "REGISTRATION_ANALYSIS");
+            result.put("analysisType", "재배방법 분석");
             result.put("message", "분석 중 오류가 발생했습니다: " + e.getMessage());
         }
 

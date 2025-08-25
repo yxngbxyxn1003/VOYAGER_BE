@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 
-// 로컬 저장 서비스
+
 @Service
 public class LocalStorageService implements StorageService {
 
@@ -37,15 +37,14 @@ public class LocalStorageService implements StorageService {
         // 파일 저장 (같은 이름이 있으면 덮어씀)
         Files.copy(file.getInputStream(), dir.resolve(name), StandardCopyOption.REPLACE_EXISTING);
 
-        // 저장된 파일의 접근 URL 반환
-        // 주의: Nginx에서 /uploads/** → uploadDir 경로 매핑 필요
-        return "/uploads/" + folder + "/" + name;
+        // 저장된 파일의 상대경로 반환 (예: "uploads/diagnosis/uuid.jpg")
+        return "uploads/" + folder + "/" + name;
     }
 
     @Override
     public void deleteByUrl(String url) throws IOException {
-        // 업로드 URL(/uploads/...)을 실제 파일 경로로 변환 후 삭제
-        Path p = Path.of(uploadDir, url.replaceFirst("^/uploads/", ""));
+        // 상대경로를 실제 파일 경로로 변환 후 삭제 (예: "uploads/diagnosis/uuid.jpg" → "diagnosis/uuid.jpg")
+        Path p = Path.of(uploadDir, url.replaceFirst("^uploads/", ""));
         Files.deleteIfExists(p);
     }
 
