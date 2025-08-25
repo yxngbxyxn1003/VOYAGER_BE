@@ -12,10 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 
-/**
- * 로컬 파일 시스템을 사용한 이미지 저장 서비스
- * 모든 이미지는 상대경로로 저장되어 웹 서버의 루트 디렉토리 기준으로 접근 가능
- */
+
 @Service
 public class LocalStorageService implements StorageService {
 
@@ -40,13 +37,13 @@ public class LocalStorageService implements StorageService {
         // 파일 저장 (같은 이름이 있으면 덮어씀)
         Files.copy(file.getInputStream(), dir.resolve(name), StandardCopyOption.REPLACE_EXISTING);
 
-        // 저장된 파일의 상대경로 반환 (웹 서버 루트 기준)
+        // 저장된 파일의 상대경로 반환 (예: "uploads/diagnosis/uuid.jpg")
         return "uploads/" + folder + "/" + name;
     }
 
     @Override
     public void deleteByUrl(String url) throws IOException {
-        // 상대경로를 실제 파일 경로로 변환 후 삭제
+        // 상대경로를 실제 파일 경로로 변환 후 삭제 (예: "uploads/diagnosis/uuid.jpg" → "diagnosis/uuid.jpg")
         Path p = Path.of(uploadDir, url.replaceFirst("^uploads/", ""));
         Files.deleteIfExists(p);
     }

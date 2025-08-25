@@ -305,17 +305,19 @@ public class CropController {
             @RequestParam("analysisType") String analysisType,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
+        Map<String, Object> response = new LinkedHashMap<>();
+
         try {
+            // 이미지 검증 제거 - 어떤 이미지든 허용
+
             User user = userService.findById(userDetails.getId());
             
             // 작물 존재 여부 및 권한 확인
             Crop crop = cropService.getCropById(cropId);
             if (!crop.getUser().getId().equals(user.getId())) {
-                return ResponseEntity.status(403)
-                    .body(Map.of(
-                        "success", false,
-                        "message", "권한이 없습니다."
-                    ));
+                response.put("success", false);
+                response.put("message", "권한이 없습니다.");
+                return ResponseEntity.status(403).body(response);
             }
 
             // AnalysisType enum으로 변환
@@ -323,26 +325,21 @@ public class CropController {
             try {
                 analysisTypeEnum = AnalysisType.valueOf(analysisType);
             } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest()
-                    .body(Map.of(
-                        "success", false,
-                        "message", "잘못된 진단 타입입니다: " + analysisType
-                    ));
+                response.put("success", false);
+                response.put("message", "잘못된 진단 타입입니다: " + analysisType);
+                return ResponseEntity.badRequest().body(response);
             }
 
             // 진단 분석 타입인지 확인 (CURRENT_STATUS, DISEASE_CHECK, QUALITY_MARKET만 허용)
             if (!analysisTypeEnum.isDiagnosisAnalysis()) {
-                return ResponseEntity.badRequest()
-                    .body(Map.of(
-                        "success", false,
-                        "message", "잘못된 진단 타입입니다. 진단 분석만 가능합니다."
-                    ));
+                response.put("success", false);
+                response.put("message", "잘못된 진단 타입입니다. 진단 분석만 가능합니다.");
+                return ResponseEntity.badRequest().body(response);
             }
 
             // 해당 cropID로 진단 수행
             CropDetailAnalysisResult result = cropService.analyzeCropDiagnosis(cropId, user, analysisTypeEnum, image);
 
-            Map<String, Object> response = new LinkedHashMap<>();
             if (result.isSuccess()) {
                 response.put("success", true);
                 response.put("message", "작물 진단이 완료되었습니다.");
@@ -357,12 +354,10 @@ public class CropController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("작물 진단 실패 - Crop ID: {}", cropId, e);
-            return ResponseEntity.badRequest()
-                .body(Map.of(
-                    "success", false,
-                    "message", "진단에 실패했습니다: " + e.getMessage()
-                ));
+            log.error("작물 진단 실패 - Crop ID: {}, 오류: {}", cropId, e.getMessage(), e);
+            response.put("success", false);
+            response.put("message", "진단에 실패했습니다. 잠시 후 다시 시도해주세요.");
+            return ResponseEntity.status(500).body(response);
         }
     }
 
@@ -479,22 +474,9 @@ public class CropController {
                 updateDto = objectMapper.readValue(cropDataJson, CropRegistrationDto.class);
             }
             
-            // 이미지 파일이 있는 경우 이미지 업데이트
+            // 이미지 파일이 있는 경우 이미지 업데이트 (검증 없음)
             if (imageFile != null && !imageFile.isEmpty()) {
-                // 파일 크기 검증 (10MB 제한)
-                if (imageFile.getSize() > 10 * 1024 * 1024) {
-                    response.put("success", false);
-                    response.put("message", "이미지 파일 크기는 10MB 이하여야 합니다.");
-                    return ResponseEntity.badRequest().body(response);
-                }
-
-                // 파일 형식 검증
-                String contentType = imageFile.getContentType();
-                if (contentType == null || !contentType.startsWith("image/")) {
-                    response.put("success", false);
-                    response.put("message", "이미지 파일만 업로드 가능합니다.");
-                    return ResponseEntity.badRequest().body(response);
-                }
+                // 이미지 검증 제거 - 어떤 이미지든 허용
             }
             
             // 작물 정보 업데이트 (이미지 포함)

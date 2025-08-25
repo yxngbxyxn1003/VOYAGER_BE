@@ -28,6 +28,8 @@ public class CropDiagnosisAnalysisService {
      * 작물 상세페이지에서 진단받기 (해당 cropID로 진단 진행)
      */
     public CropDetailAnalysisResult analyzeCropDiagnosis(Integer cropId, com.planty.entity.user.User user, AnalysisType analysisType, MultipartFile image) throws IOException {
+        // 이미지 검증 제거 - 어떤 이미지든 허용
+
         log.info("작물 진단 시작 - 사용자: {}, 작물ID: {}, 분석타입: {}, 이미지: {} ({} bytes)", 
             user.getNickname(), cropId, analysisType, image.getOriginalFilename(), image.getSize());
 
@@ -36,9 +38,10 @@ public class CropDiagnosisAnalysisService {
             return new CropDetailAnalysisResult(false, "잘못된 분석 타입입니다. 진단 분석만 가능합니다.", analysisType);
         }
 
+        String savedImagePath = null;
         try {
             // 이미지 파일 저장
-            String savedImagePath = storageService.save(image, "diagnosis");
+            savedImagePath = storageService.save(image, "diagnosis");
             log.info("진단 이미지 저장 완료: {}", savedImagePath);
 
             // OpenAI로 진단 분석 수행
@@ -55,9 +58,20 @@ public class CropDiagnosisAnalysisService {
             return result;
 
         } catch (Exception e) {
-            log.error("작물 진단 중 오류 발생 - 사용자: {}, 작물ID: {}, 분석타입: {}, 이미지: {}", 
-                user.getNickname(), cropId, analysisType, image.getOriginalFilename(), e);
-            return new CropDetailAnalysisResult(false, "진단 분석 중 오류가 발생했습니다: " + e.getMessage(), analysisType);
+            log.error("작물 진단 중 오류 발생 - 사용자: {}, 작물ID: {}, 분석타입: {}, 이미지: {}, 오류: {}", 
+                user.getNickname(), cropId, analysisType, image.getOriginalFilename(), e.getMessage(), e);
+            
+            // 저장된 이미지가 있으면 삭제 시도
+            if (savedImagePath != null) {
+                try {
+                    storageService.deleteByUrl(savedImagePath);
+                    log.info("오류 발생으로 인한 이미지 파일 삭제 완료: {}", savedImagePath);
+                } catch (Exception deleteEx) {
+                    log.warn("오류 발생 후 이미지 파일 삭제 실패: {}, 오류: {}", savedImagePath, deleteEx.getMessage());
+                }
+            }
+            
+            return new CropDetailAnalysisResult(false, "진단 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", analysisType);
         }
     }
 

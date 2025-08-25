@@ -42,10 +42,7 @@ public class DiaryService {
         User user = userRepository.getReferenceById(userId);
         Crop crop = cropRepository.getReferenceById(dto.getCropId());
 
-        // 이미지 개수 검증 (최대 9개)
-        if (imageUrls != null && imageUrls.size() > 9) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지는 최대 9개까지만 업로드할 수 있습니다.");
-        }
+        // 이미지 검증 제거 - 어떤 이미지든 허용
 
         // 재배일지 생성 및 데이터 삽입
         Diary diary = new Diary();
@@ -87,10 +84,7 @@ public class DiaryService {
         User user = userRepository.getReferenceById(userId);
         Crop crop = cropRepository.getReferenceById(cropId);
 
-        // 이미지 개수 검증 (최대 9개)
-        if (imageUrls != null && imageUrls.size() > 9) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미지는 최대 9개까지만 업로드할 수 있습니다.");
-        }
+        // 이미지 검증 제거 - 어떤 이미지든 허용
 
         // 재배일지 생성
         Diary diary = new Diary();
