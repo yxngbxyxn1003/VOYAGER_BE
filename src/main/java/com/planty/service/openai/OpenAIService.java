@@ -73,7 +73,7 @@ public class OpenAIService {
      * 작물 이미지를 분석하여 작물 정보를 반환 (작물 등록용)
      */
     public CropAnalysisResult analyzeCropImage(String imagePath) {
-        return analyzeCropImage(imagePath, AnalysisType.REGISTRATION_ANALYSIS);
+        return analyzeCropImage(imagePath, null);
     }
 
     /**
@@ -392,7 +392,7 @@ public class OpenAIService {
             case CURRENT_STATUS -> config.getCurrentStatusPrompt();
             case DISEASE_CHECK -> config.getDiseaseCheckPrompt();
             case QUALITY_MARKET -> config.getQualityMarketPrompt();
-            case REGISTRATION_ANALYSIS -> throw new IllegalArgumentException("재배방법 분석은 이 메서드에서 지원하지 않습니다.");
+            default -> throw new IllegalArgumentException("지원하지 않는 분석 타입입니다: " + analysisType);
         };
     }
 
