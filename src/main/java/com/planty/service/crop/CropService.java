@@ -26,6 +26,7 @@ import com.planty.entity.diary.DiaryImage;
 import com.planty.repository.diary.DiaryRepository;
 import com.planty.dto.crop.CropDetailAnalysisResult;
 import com.planty.entity.crop.AnalysisType;
+import com.planty.entity.crop.CropCategory;
 
 
 @Slf4j
@@ -78,6 +79,25 @@ public class CropService {
     @Transactional(readOnly = true)
     public List<HomeCropDto> getHomeCrop(Integer userId) {
         List<Crop> crops = cropRepository.findByUser_IdAndHarvestFalseOrderByCreatedAtDesc(userId);
+        
+        // 카테고리 정보를 명시적으로 로드하고 없으면 생성
+        crops.forEach(crop -> {
+            if (crop.getCategories() == null || crop.getCategories().isEmpty()) {
+                // 작물 이름에 따라 적절한 카테고리 설정
+                List<CropCategory> defaultCategories = new ArrayList<>();
+                CropCategory defaultCategory = new CropCategory();
+                
+                String categoryName = getCategoryByCropName(crop.getName());
+                defaultCategory.setCategoryName(categoryName);
+                defaultCategory.setCrop(crop);
+                defaultCategories.add(defaultCategory);
+                crop.setCategories(defaultCategories);
+                
+                // DB에 카테고리 저장
+                cropRepository.save(crop);
+            }
+        });
+        
         return crops.stream()
                 .map(HomeCropDto::of)
                 .map(dto -> {
@@ -333,6 +353,74 @@ public class CropService {
                     return diaryInfo;
                 })
                 .toList();
+    }
+    
+    /**
+     * 작물 이름에 따라 7개 대분류 카테고리를 반환하는 메서드
+     */
+    private String getCategoryByCropName(String cropName) {
+        if (cropName == null) return "기타";
+        
+        String name = cropName.toLowerCase();
+        
+        // 잎채소
+        if (name.contains("상추") || name.contains("lettuce")) return "잎채소";
+        if (name.contains("배추") || name.contains("cabbage")) return "잎채소";
+        if (name.contains("양배추") || name.contains("cabbage")) return "잎채소";
+        if (name.contains("시금치") || name.contains("spinach")) return "잎채소";
+        if (name.contains("케일") || name.contains("kale")) return "잎채소";
+        if (name.contains("청경채") || name.contains("bok choy")) return "잎채소";
+        if (name.contains("근대") || name.contains("chard")) return "잎채소";
+        if (name.contains("갓") || name.contains("mustard")) return "잎채소";
+        
+        // 과채
+        if (name.contains("토마토") || name.contains("tomato")) return "과채";
+        if (name.contains("오이") || name.contains("cucumber")) return "과채";
+        if (name.contains("고추") || name.contains("pepper")) return "과채";
+        if (name.contains("가지") || name.contains("eggplant")) return "과채";
+        if (name.contains("호박") || name.contains("pumpkin")) return "과채";
+        if (name.contains("수박") || name.contains("watermelon")) return "과채";
+        if (name.contains("참외") || name.contains("melon")) return "과채";
+        if (name.contains("멜론") || name.contains("cantaloupe")) return "과채";
+        
+        // 뿌리채소
+        if (name.contains("당근") || name.contains("carrot")) return "뿌리채소";
+        if (name.contains("무") || name.contains("radish")) return "뿌리채소";
+        if (name.contains("감자") || name.contains("potato")) return "뿌리채소";
+        if (name.contains("고구마") || name.contains("sweet potato")) return "뿌리채소";
+        if (name.contains("양파") || name.contains("onion")) return "뿌리채소";
+        if (name.contains("마늘") || name.contains("garlic")) return "뿌리채소";
+        if (name.contains("생강") || name.contains("ginger")) return "뿌리채소";
+        if (name.contains("우엉") || name.contains("burdock")) return "뿌리채소";
+        if (name.contains("연근") || name.contains("lotus root")) return "뿌리채소";
+        if (name.contains("비트") || name.contains("beet")) return "뿌리채소";
+        
+        // 십자화과 채소
+        if (name.contains("브로콜리") || name.contains("broccoli")) return "십자화과 채소";
+        if (name.contains("콜리플라워") || name.contains("cauliflower")) return "십자화과 채소";
+        
+        // 콩
+        if (name.contains("콩") || name.contains("bean")) return "콩";
+        if (name.contains("팥") || name.contains("red bean")) return "콩";
+        if (name.contains("녹두") || name.contains("mung bean")) return "콩";
+        if (name.contains("완두") || name.contains("pea")) return "콩";
+        if (name.contains("강낭콩") || name.contains("kidney bean")) return "콩";
+        if (name.contains("병아리콩") || name.contains("chickpea")) return "콩";
+        
+        // 허브
+        if (name.contains("바질") || name.contains("basil")) return "허브";
+        if (name.contains("로즈마리") || name.contains("rosemary")) return "허브";
+        if (name.contains("타임") || name.contains("thyme")) return "허브";
+        if (name.contains("민트") || name.contains("mint")) return "허브";
+        if (name.contains("파슬리") || name.contains("parsley")) return "허브";
+        if (name.contains("세이지") || name.contains("sage")) return "허브";
+        if (name.contains("오레가노") || name.contains("oregano")) return "허브";
+        if (name.contains("라벤더") || name.contains("lavender")) return "허브";
+        if (name.contains("딜") || name.contains("dill")) return "허브";
+        if (name.contains("코리앤더") || name.contains("coriander")) return "허브";
+        
+        // 기본값
+        return "기타";
     }
 }
 

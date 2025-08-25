@@ -48,7 +48,7 @@ CREATE TABLE crop (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 4. CropCategory 테이블
-CREATE TABLE crop_categories (
+CREATE TABLE crop_category (
     id INT AUTO_INCREMENT PRIMARY KEY,
     crop_id INT NOT NULL,
     category_name VARCHAR(100) NOT NULL,
