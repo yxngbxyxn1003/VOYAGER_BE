@@ -26,8 +26,10 @@ public class ChatController {
 
     // 채팅 시작
     @PostMapping("/start")
-    public ResponseEntity<ChatDto> startChat(@RequestBody Integer sellerId, @AuthenticationPrincipal CustomUserDetails user) {
-        return ResponseEntity.ok(chatService.startChat(user.getId(), sellerId));
+    public ResponseEntity<List<ChatMessageDto>> startChat(@RequestBody Integer sellerId, @AuthenticationPrincipal CustomUserDetails user) {
+        ChatDto chatDto = chatService.startChat(user.getId(), sellerId);
+        List<ChatMessageDto> chatMessageDto = chatService.getChatMessages(chatDto.getChatId());
+        return ResponseEntity.ok(chatMessageDto);
     }
 
     // 채팅 기록 조회
