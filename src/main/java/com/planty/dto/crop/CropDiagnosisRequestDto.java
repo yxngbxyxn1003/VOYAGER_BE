@@ -21,5 +21,5 @@ public class CropDiagnosisRequestDto {
     /**
      * 진단할 이미지 URL (선택적 - 작물 기본 이미지 대신 다른 이미지 사용시)
      */
-    private String imageUrl;
+    private String image;
 }

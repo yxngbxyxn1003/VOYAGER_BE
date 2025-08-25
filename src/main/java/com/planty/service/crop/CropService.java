@@ -6,6 +6,7 @@ import com.planty.entity.crop.AnalysisStatus;
 import com.planty.entity.crop.Crop;
 import com.planty.entity.user.User;
 import com.planty.repository.crop.CropRepository;
+import com.planty.repository.crop.CropCategoryRepository;
 import com.planty.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ import com.planty.entity.crop.CropCategory;
 public class CropService {
 
     private final CropRepository cropRepository;
+    private final CropCategoryRepository cropCategoryRepository;
     private final CropRegistrationAnalysisService registrationAnalysisService;
     private final CropDiagnosisAnalysisService diagnosisAnalysisService;
     private final UserRepository userRepository;
@@ -84,17 +86,18 @@ public class CropService {
         crops.forEach(crop -> {
             if (crop.getCategories() == null || crop.getCategories().isEmpty()) {
                 // 작물 이름에 따라 적절한 카테고리 설정
-                List<CropCategory> defaultCategories = new ArrayList<>();
-                CropCategory defaultCategory = new CropCategory();
-                
                 String categoryName = getCategoryByCropName(crop.getName());
+                
+                // 새로운 카테고리 생성
+                CropCategory defaultCategory = new CropCategory();
                 defaultCategory.setCategoryName(categoryName);
                 defaultCategory.setCrop(crop);
-                defaultCategories.add(defaultCategory);
-                crop.setCategories(defaultCategories);
                 
-                // DB에 카테고리 저장
-                cropRepository.save(crop);
+                // 카테고리를 직접 저장
+                cropCategoryRepository.save(defaultCategory);
+                
+                // 엔티티 상태 새로고침
+                cropRepository.flush();
             }
         });
         

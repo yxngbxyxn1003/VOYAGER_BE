@@ -12,10 +12,10 @@ import com.planty.repository.diary.DiaryRepository;
 import com.planty.repository.user.UserRepository;
 import com.planty.service.crop.CropService;
 import com.planty.storage.StorageService;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class DiaryService {
 
     private final DiaryRepository diaryRepository;

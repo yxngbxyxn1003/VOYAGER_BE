@@ -51,7 +51,7 @@ public class Crop {
 
     private Boolean harvest;
 
-    @OneToMany(mappedBy = "crop", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "crop", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<CropCategory> categories = new ArrayList<>();
 
 
