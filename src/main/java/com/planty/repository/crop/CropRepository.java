@@ -37,6 +37,6 @@ public interface CropRepository extends JpaRepository<Crop, Integer> {
     List<Crop> findByUser_IdAndHarvestFalseOrderByCreatedAtDesc(Integer userId);
     
     // 작물 상세 조회 (사용자 정보 포함)
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user"})
+    @Query("SELECT c FROM Crop c LEFT JOIN FETCH c.user WHERE c.id = :cropId")
     Optional<Crop> findByIdWithUser(Integer cropId);
 }
